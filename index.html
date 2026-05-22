@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>osheet — UX preview</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #16181d;
+    --ink: #e7e8ea;
+    --muted: #8a8f98;
+    --line: #2a2d34;
+    --accent: #7cc4a3;
+    --warn: #e2b15a;
+    --bad: #d97a7a;
+    --tile: #1d2026;
+    --tile-hot: #232831;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #08090b; color: var(--ink);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  .stage {
+    height: 100vh; display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 16px; padding: 16px 20px;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  header b { color: var(--ink); letter-spacing: 0; text-transform: none; font-size: 14px; }
+  .frame-wrap {
+    display: flex; justify-content: center; align-items: center;
+    overflow: hidden;
+  }
+  .phone {
+    width: 360px; height: 740px;
+    border-radius: 44px;
+    background: var(--panel);
+    box-shadow: 0 0 0 10px #1f2127, 0 30px 60px rgba(0,0,0,.5);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .notch {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 28px; background: #08090b; border-radius: 16px; z-index: 5;
+  }
+  .statusbar {
+    padding: 18px 28px 6px; display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted);
+  }
+  .screen {
+    flex: 1; padding: 18px 22px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+    overflow: hidden;
+  }
+  .title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .card {
+    background: var(--tile); border: 1px solid var(--line);
+    border-radius: 16px; padding: 14px 16px;
+  }
+  .card .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  .card h3 { margin: 6px 0 4px; font-size: 16px; font-weight: 600; }
+  .card p { margin: 0; color: var(--muted); font-size: 13px; }
+  .accent { color: var(--accent); }
+  .warn { color: var(--warn); }
+  .bad { color: var(--bad); }
+  .fab {
+    position: absolute; right: 22px; bottom: 28px;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: var(--accent); color: #08090b;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 28px;
+    box-shadow: 0 10px 30px rgba(124,196,163,.35);
+  }
+  .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .tile {
+    background: var(--tile); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px; min-height: 78px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .tile .num { font-size: 22px; font-weight: 700; }
+  .tile .name { font-size: 12px; color: var(--muted); }
+  .tile .icon { font-size: 22px; align-self: flex-end; opacity: .85; }
+  .tile.hot { background: var(--tile-hot); border-color: #3a4250; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 8px 12px; font-size: 12px; color: var(--ink);
+    background: #1a1d23;
+  }
+  .chip.on { background: var(--accent); color: #08090b; border-color: var(--accent); }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .btn {
+    background: var(--accent); color: #08090b;
+    border-radius: 12px; padding: 12px 16px; font-weight: 600; text-align: center;
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  .toast {
+    background: #1a2a22; border: 1px solid #2b4a3a; color: var(--accent);
+    border-radius: 12px; padding: 10px 14px; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .tl {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center;
+    padding: 10px 12px; background: var(--tile); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .tl .t { color: var(--muted); font-size: 11px; }
+  .tl .type { font-weight: 600; }
+  .tl .lock { color: var(--muted); font-size: 12px; }
+  .bar {
+    height: 8px; background: var(--line); border-radius: 4px; overflow: hidden;
+  }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .pdfpage {
+    background: #f4f4ef; color: #15161a; border-radius: 8px; padding: 16px;
+    font-family: Georgia, "Times New Roman", serif; flex: 1; overflow: hidden;
+  }
+  .pdfpage h2 { margin: 0 0 4px; font-size: 17px; }
+  .pdfpage h4 { margin: 14px 0 6px; font-size: 12px; color: #555; letter-spacing: .08em; text-transform: uppercase; font-family: -apple-system, sans-serif; }
+  .pdfpage .meta { color: #555; font-size: 11px; }
+  .pdfpage table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: -apple-system, sans-serif; }
+  .pdfpage td, .pdfpage th { padding: 4px 6px; border-bottom: 1px solid #ddd; text-align: left; }
+  .histo { display: flex; gap: 4px; align-items: flex-end; height: 50px; margin-top: 4px; }
+  .histo > i { display: block; width: 100%; background: #5a8d7a; border-radius: 2px 2px 0 0; }
+  .histo > i.warn { background: #c79447; }
+  .nav {
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--muted); font-size: 12px;
+  }
+  .nav .ctrls { display: flex; gap: 8px; }
+  .nav button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; cursor: pointer;
+  }
+  .nav button:hover { background: var(--tile-hot); }
+  .dot-row { display: flex; gap: 4px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+  .dot.on { background: var(--accent); }
+  .annotation {
+    max-width: 360px; color: var(--muted); font-size: 12px; line-height: 1.5;
+    padding: 0 8px;
+  }
+  .annotation b { color: var(--ink); }
+  .stage-grid {
+    display: grid; grid-template-columns: 1fr 420px 1fr; align-items: center; gap: 24px;
+    height: 100%;
+  }
+  .left-anno { text-align: right; justify-self: end; }
+  .right-anno { text-align: left; justify-self: start; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #1a1d23; border: 1px solid var(--line); font-size: 10px; color: var(--muted); letter-spacing: .05em; }
+  .seg {
+    display: grid; grid-template-columns: 1fr 1fr; background: #1a1d23; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    font-size: 12px;
+  }
+  .seg > div { padding: 8px; text-align: center; color: var(--muted); }
+  .seg > div.on { background: var(--tile-hot); color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <span><b>osheet</b> &middot; clickable preview</span>
+    <span id="counter">1 / 9</span>
+  </header>
+
+  <div class="frame-wrap">
+    <div class="stage-grid">
+      <div class="annotation left-anno" id="annoL"></div>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>●●● ▸ 87%</span></div>
+        <div class="screen" id="screen"></div>
+      </div>
+      <div class="annotation right-anno" id="annoR"></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="dot-row" id="dots"></div>
+    <div class="ctrls">
+      <button id="prev">← Prev</button>
+      <button id="next">Next →</button>
+    </div>
+    <span>Arrow keys to cycle</span>
+  </div>
+</div>
+
+<script>
+const screens = [
+  {
+    name: "Onboarding — privacy pact",
+    annoL: "<b>Privacy first.</b> No account. No cloud by default. App icon and name are generic on the home screen.",
+    annoR: "<b>Why this matters:</b> shame is the #1 reason users delete bowel-tracking apps within a week.",
+    html: `
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:18px;">
+        <div style="font-size:46px;">⚬</div>
+        <div class="title">Yours alone.</div>
+        <div class="sub">Logs stay on this device, encrypted. Photos never touch your camera roll or iCloud.</div>
+        <div class="card">
+          <div class="label">App icon on home screen</div>
+          <h3>"Wellness Journal"</h3>
+          <p>Generic name + neutral icon. Switch back any time.</p>
+        </div>
+      </div>
+      <div class="btn">Use Face ID to continue</div>
+      <div class="btn ghost">Use a passcode instead</div>
+    `
+  },
+  {
+    name: "Home — Day 0 (progress contract)",
+    annoL: "<b>The cold-start fix.</b> Day 0 doesn't show fake insights — it shows the contract: log N more times to unlock pattern X.",
+    annoR: "<b>FAB</b> is always thumb-reach. Insight card replaces it at the top of attention once data exists.",
+    html: `
+      <div class="row">
+        <div class="title">Hi.</div>
+        <span class="pill">Day 1</span>
+      </div>
+      <div class="card" style="background:linear-gradient(180deg,#1d2a23,#1a1d23);border-color:#2b4a3a;">
+        <div class="label accent">Your first insight</div>
+        <h3>4 more logs to your first pattern</h3>
+        <p>So far you've logged 1 stool and 0 meals. Add today's meals to start seeing connections.</p>
+        <div class="bar" style="margin-top:10px;"><i style="width:20%"></i></div>
+      </div>
+      <div class="card">
+        <div class="label">Quick log</div>
+        <div class="chips" style="margin-top:8px;">
+          <div class="chip">🍽 Just ate</div>
+          <div class="chip">😣 Stressed</div>
+          <div class="chip">💊 Took med</div>
+          <div class="chip">😴 Slept poorly</div>
+        </div>
+      </div>
+      <div style="flex:1;"></div>
+      <div class="fab">+</div>
+    `
+  },
+  {
+    name: "Home — Day 21 (insight surfaced)",
+    annoL: "<b>Confidence shown.</b> 5/5 samples, last 14d. We never present a 2-sample correlation as a fact.",
+    annoR: "<b>Note:</b> the home is insight-first, log-second. That's the lead pain point delivered.",
+    html: `
+      <div class="row">
+        <div class="title">This week</div>
+        <span class="pill">14 logs · 8 meals</span>
+      </div>
+      <div class="card" style="background:linear-gradient(180deg,#2a221d,#1a1d23);border-color:#4a3a2b;">
+        <div class="label warn">Pattern detected</div>
+        <h3>Type 6 stools followed dairy 5/5 times</h3>
+        <p>Within 2–6h, last 14 days. Tap to see the entries.</p>
+      </div>
+      <div class="card">
+        <div class="label">Watching</div>
+        <h3>Stress → urgency</h3>
+        <p>3/4 high-stress days. Need 1 more to confirm.</p>
+        <div class="bar" style="margin-top:10px;"><i style="width:75%"></i></div>
+      </div>
+      <div class="card">
+        <div class="label">Frequency</div>
+        <h3>2.1 / day (down from 3.4)</h3>
+        <p>Lowest week this month.</p>
+      </div>
+      <div style="flex:1;"></div>
+      <div class="fab">+</div>
+    `
+  },
+  {
+    name: "Log — Bristol tiles",
+    annoL: "<b>One thumb, one tap.</b> Tiles fill the screen. No header navigation to distract.",
+    annoR: "<b>Medical illustrations</b>, not cartoons. Adults with chronic illness want to feel taken seriously.",
+    html: `
+      <div class="row">
+        <div class="title">Log stool</div>
+        <span class="sub">9:41 today</span>
+      </div>
+      <div class="tiles" style="flex:1;">
+        <div class="tile"><div><div class="num">1</div><div class="name">Separate hard lumps</div></div><div class="icon">⚈</div></div>
+        <div class="tile"><div><div class="num">2</div><div class="name">Lumpy sausage</div></div><div class="icon">⬬</div></div>
+        <div class="tile"><div><div class="num">3</div><div class="name">Cracked sausage</div></div><div class="icon">⬭</div></div>
+        <div class="tile"><div><div class="num">4</div><div class="name">Smooth sausage</div></div><div class="icon">━</div></div>
+        <div class="tile"><div><div class="num">5</div><div class="name">Soft blobs</div></div><div class="icon">⬮</div></div>
+        <div class="tile hot"><div><div class="num">6</div><div class="name">Mushy, ragged edges</div></div><div class="icon">≋</div></div>
+      </div>
+      <div class="tile" style="display:flex;flex-direction:row;justify-content:space-between;align-items:center;">
+        <div><div class="num">7</div><div class="name">Liquid, no solid</div></div><div class="icon">∿</div>
+      </div>
+    `
+  },
+  {
+    name: "Log — saved toast + optional chips",
+    annoL: "<b>Saved confirmation.</b> Toast says the primary log is committed. Chips below are explicitly optional.",
+    annoR: "<b>Big Done button</b> removes the \"where do I stop?\" ambiguity. Tapping outside also confirms.",
+    html: `
+      <div class="row">
+        <div class="title">Type 6 logged</div>
+        <span class="sub">9:41 today</span>
+      </div>
+      <div class="toast">
+        <span>✓ Saved. Add details if you want.</span>
+        <span style="opacity:.6;">Undo</span>
+      </div>
+      <div class="sub" style="margin-top:4px;">Optional — these help find patterns.</div>
+      <div>
+        <div class="label" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Urgency</div>
+        <div class="chips"><div class="chip">None</div><div class="chip on">Some</div><div class="chip">Couldn't hold it</div></div>
+      </div>
+      <div>
+        <div class="label" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Pain</div>
+        <div class="chips"><div class="chip">0</div><div class="chip">1</div><div class="chip on">2</div><div class="chip">3</div></div>
+      </div>
+      <div>
+        <div class="label" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Other</div>
+        <div class="chips"><div class="chip">Blood</div><div class="chip">Mucus</div><div class="chip">Felt incomplete</div><div class="chip">📷 Add photo</div></div>
+      </div>
+      <div style="flex:1;"></div>
+      <div class="btn">Done</div>
+    `
+  },
+  {
+    name: "Quick trigger — \"just ate\"",
+    annoL: "<b>Timestamp accuracy.</b> One tap from the home or widget locks in <i>now</i>. Details fillable later.",
+    annoR: "<b>Recall lag was the #1 killer</b> of correlation quality. This is the antidote.",
+    html: `
+      <div class="row">
+        <div class="title">Just ate</div>
+        <span class="sub">9:41 — locked in</span>
+      </div>
+      <div class="card">
+        <div class="label accent">✓ Time captured</div>
+        <h3>Add what you had — now or later</h3>
+        <p>You can come back any time today. We'll nudge once.</p>
+      </div>
+      <div class="seg">
+        <div class="on">📷 Photo</div>
+        <div>✏️ Type it</div>
+      </div>
+      <div style="flex:1;border:1px dashed var(--line);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">
+        Tap to add meal photo
+      </div>
+      <div>
+        <div class="label" style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Common tags</div>
+        <div class="chips">
+          <div class="chip">Dairy</div><div class="chip on">Gluten</div><div class="chip">Spicy</div>
+          <div class="chip">Coffee</div><div class="chip">Alcohol</div><div class="chip">Restaurant</div>
+        </div>
+      </div>
+      <div class="btn ghost">Save & finish later</div>
+    `
+  },
+  {
+    name: "Timeline — privacy-first",
+    annoL: "<b>No photo thumbnails.</b> Even with someone over your shoulder, the timeline reads like a generic log.",
+    annoR: "<b>Long-press</b> an entry to reveal its photo. Short-press opens detail.",
+    html: `
+      <div class="row">
+        <div class="title">Timeline</div>
+        <span class="pill">Last 7 days</span>
+      </div>
+      <div class="seg">
+        <div class="on">By day</div>
+        <div>By pattern</div>
+      </div>
+      <div class="timeline">
+        <div class="tl"><div class="t">Today<br/>9:41</div><div><div class="type">Type 6 · pain 2</div><div class="sub">After: dairy (8:15)</div></div><div class="lock">🔒</div></div>
+        <div class="tl"><div class="t">Today<br/>7:02</div><div><div class="type">Type 5 · urgent</div><div class="sub">No trigger logged</div></div><div class="lock"></div></div>
+        <div class="tl"><div class="t">Yest<br/>22:10</div><div><div class="type">Type 4</div><div class="sub">After: stressed (19:00)</div></div><div class="lock"></div></div>
+        <div class="tl"><div class="t">Yest<br/>9:30</div><div><div class="type">Type 6 · blood</div><div class="sub bad">After: dairy (7:50)</div></div><div class="lock">🔒</div></div>
+        <div class="tl"><div class="t">Mon<br/>10:15</div><div><div class="type">Type 4</div><div class="sub">—</div></div><div class="lock"></div></div>
+        <div class="tl"><div class="t">Sun<br/>14:40</div><div><div class="type">Type 7</div><div class="sub bad">After: restaurant gluten</div></div><div class="lock">🔒</div></div>
+      </div>
+    `
+  },
+  {
+    name: "PDF export — date range",
+    annoL: "<b>The value moment.</b> One tap, one range, one PDF formatted for a GI to skim in 90 seconds.",
+    annoR: "<b>Photo opt-in is per-entry,</b> never default. The user marks \"show doctor\" deliberately.",
+    html: `
+      <div class="row">
+        <div class="title">For your doctor</div>
+        <span class="sub">PDF report</span>
+      </div>
+      <div class="card">
+        <div class="label">Date range</div>
+        <h3>Last 30 days</h3>
+        <p>Apr 22 – May 22, 2026</p>
+        <div class="chips" style="margin-top:10px;">
+          <div class="chip">2 wks</div><div class="chip on">30 days</div><div class="chip">90 days</div><div class="chip">Custom</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Included</div>
+        <div class="row" style="margin-top:6px;"><span>Bristol distribution</span><span class="accent">✓</span></div>
+        <div class="row"><span>Symptom timeline</span><span class="accent">✓</span></div>
+        <div class="row"><span>Trigger correlations</span><span class="accent">✓</span></div>
+        <div class="row"><span>Daily log table</span><span class="accent">✓</span></div>
+        <div class="row"><span>Photos (3 marked for doctor)</span><span class="warn">Opt-in</span></div>
+      </div>
+      <div style="flex:1;"></div>
+      <div class="btn">Generate PDF</div>
+      <div class="btn ghost">Preview first</div>
+    `
+  },
+  {
+    name: "PDF preview — the deliverable",
+    annoL: "<b>Page 1 is the GI handshake.</b> Bristol histogram, frequency, flagged correlations.",
+    annoR: "<b>Mirrors ROME-IV / IBD-Disk conventions</b> so the GI's eye lands where they expect.",
+    html: `
+      <div class="pdfpage">
+        <h2>Bowel & symptom report</h2>
+        <div class="meta">Patient code: WJ-2026-0522 &middot; Range: Apr 22 – May 22, 2026 &middot; 47 entries</div>
+        <h4>Bristol distribution</h4>
+        <div class="histo" title="1–7">
+          <i style="height:8%"></i><i style="height:14%"></i><i style="height:18%"></i>
+          <i style="height:34%"></i><i style="height:46%"></i>
+          <i class="warn" style="height:90%"></i><i class="warn" style="height:58%"></i>
+        </div>
+        <div class="meta" style="margin-top:4px;">Types 6–7 represent 58% of stools (clinical threshold &gt;25%).</div>
+        <h4>Flagged correlations (last 30d)</h4>
+        <table>
+          <tr><th>Trigger</th><th>Outcome</th><th>n</th><th>Confidence</th></tr>
+          <tr><td>Dairy</td><td>Type 6 within 6h</td><td>5/5</td><td>High</td></tr>
+          <tr><td>Restaurant gluten</td><td>Type 7 within 12h</td><td>3/3</td><td>Moderate</td></tr>
+          <tr><td>High stress</td><td>Urgency episode</td><td>3/4</td><td>Moderate</td></tr>
+        </table>
+        <h4>Frequency</h4>
+        <div class="meta">Mean 2.4/day &middot; Range 0–6 &middot; 3 nocturnal episodes (week of May 8).</div>
+        <h4>Medications logged</h4>
+        <div class="meta">Mesalamine 800mg ×2/day — 28/30 days adherence.</div>
+      </div>
+    `
+  }
+];
+
+let i = 0;
+const screenEl = document.getElementById('screen');
+const annoL = document.getElementById('annoL');
+const annoR = document.getElementById('annoR');
+const counter = document.getElementById('counter');
+const dots = document.getElementById('dots');
+
+function render() {
+  const s = screens[i];
+  screenEl.innerHTML = s.html;
+  annoL.innerHTML = s.annoL;
+  annoR.innerHTML = s.annoR;
+  counter.textContent = `${i+1} / ${screens.length} — ${s.name}`;
+  dots.innerHTML = screens.map((_, j) => `<div class="dot ${j===i?'on':''}"></div>`).join('');
+}
+function next() { i = (i + 1) % screens.length; render(); }
+function prev() { i = (i - 1 + screens.length) % screens.length; render(); }
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') next();
+  else if (e.key === 'ArrowLeft') prev();
+});
+render();
+</script>
+</body>
+</html>

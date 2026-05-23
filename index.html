@@ -2,78 +2,132 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>osheet — UX preview v2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>osheet — clickable MVP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --cream:    #F6F1E8;
-    --cream-2:  #EFE7D6;
-    --fog:      #E8E1D4;
-    --sage:     #7FA88B;
-    --sage-d:   #5C8770;
-    --terra:    #D88B6B;
-    --terra-d:  #B86A4C;
-    --blue:     #7C9BB3;
-    --cocoa:    #3D332B;
-    --cocoa-2:  #6B5E54;
-    --shadow:   0 10px 30px rgba(61,51,43,0.08), 0 2px 6px rgba(61,51,43,0.05);
+    --cream: #F6F1E8; --cream-2: #EFE7D6; --fog: #E8E1D4;
+    --sage: #7FA88B; --sage-d: #5C8770; --sage-l: #d7e3da;
+    --terra: #D88B6B; --terra-d: #B86A4C; --terra-l: #f7e5dc;
+    --blue: #7C9BB3; --blue-l: #d7e0e8;
+    --cocoa: #3D332B; --cocoa-2: #6B5E54;
+    --shadow: 0 10px 30px rgba(61,51,43,0.08), 0 2px 6px rgba(61,51,43,0.05);
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: #d9d1c2;
-    color: var(--cocoa);
+    margin: 0; padding: 0; height: 100%; overscroll-behavior: none;
+    background: #d9d1c2; color: var(--cocoa);
     font-family: "Inter", -apple-system, system-ui, sans-serif;
-    overflow: hidden;
   }
-  .stage { height: 100vh; display: grid; grid-template-rows: auto 1fr auto; gap: 16px; padding: 16px 20px; }
-  header { display: flex; justify-content: space-between; align-items: center; color: #5a5044; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-  header b { color: var(--cocoa); letter-spacing: 0; text-transform: none; font-size: 14px; font-family: "Fraunces", serif; font-weight: 500; }
-  .frame-wrap { display:flex; justify-content:center; align-items:center; overflow:hidden; }
-  .stage-grid { display: grid; grid-template-columns: 1fr 420px 1fr; align-items: center; gap: 24px; height: 100%; }
-  .phone { width: 360px; height: 740px; border-radius: 44px; background: var(--cream); box-shadow: 0 0 0 10px #c9bfae, 0 30px 60px rgba(0,0,0,.35); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  /* On desktop: phone frame. On mobile: fullscreen. */
+  .stage { min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 24px; gap: 32px; }
+  .phone {
+    width: 390px; height: 800px; border-radius: 48px; background: var(--cream);
+    box-shadow: 0 0 0 10px #c9bfae, 0 30px 60px rgba(0,0,0,.35);
+    position: relative; overflow: hidden; display: flex; flex-direction: column;
+  }
   .notch { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background: #c9bfae; border-radius: 16px; z-index: 5; }
-  .statusbar { padding: 18px 28px 6px; display: flex; justify-content: space-between; font-size: 11px; color: var(--cocoa-2); font-weight: 500; }
-  .screen { flex:1; padding: 8px 22px 22px; display:flex; flex-direction:column; gap:14px; overflow:hidden; position:relative; }
+  .statusbar { padding: 18px 28px 6px; display: flex; justify-content: space-between; font-size: 11px; color: var(--cocoa-2); font-weight: 500; flex-shrink:0; }
+  .viewport { flex: 1; position: relative; overflow: hidden; }
+  .view {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    background: var(--cream);
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .view.has-tabs { padding-bottom: 84px; }
+  .pad { padding: 8px 22px; display:flex; flex-direction:column; gap:14px; }
+  .helper {
+    max-width: 280px; color:#4a4036; font-size:12px; line-height:1.55; align-self:center;
+  }
+  .helper h4 { font-family: "Fraunces", serif; font-weight: 500; font-size: 15px; margin: 0 0 8px; color: var(--cocoa); }
+  .helper p { margin: 0 0 8px; }
+  .helper code { background: rgba(61,51,43,0.08); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+
+  @media (max-width: 800px) {
+    .stage { padding: 0; gap: 0; }
+    .phone { width: 100vw; height: 100vh; border-radius: 0; box-shadow: none; }
+    .notch { display: none; }
+    .statusbar { display: none; }
+    .helper { display: none; }
+  }
+
   h1.title { font-family: "Fraunces", serif; font-weight: 500; font-size: 28px; line-height: 1.15; letter-spacing: -0.01em; margin: 0; }
+  h2.section { font-family: "Fraunces", serif; font-weight: 500; font-size: 20px; margin: 0; }
   .sub { color: var(--cocoa-2); font-size: 13px; line-height: 1.5; }
+  .row { display:flex; justify-content:space-between; align-items:center; }
   .card { background: #fff; border-radius: 22px; padding: 18px; box-shadow: var(--shadow); }
   .card.fog { background: var(--fog); box-shadow: none; }
   .label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--cocoa-2); font-weight: 600; }
-  .row { display:flex; justify-content:space-between; align-items:center; }
-  .chip { border: 1.5px solid var(--cocoa); color: var(--cocoa); background: transparent; border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
-  .chip.soft { border-color: rgba(61,51,43,0.2); }
+
+  .chip { border: 1.5px solid rgba(61,51,43,0.2); color: var(--cocoa); background: transparent; border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; transition: all 0.15s; }
+  .chip:active { transform: scale(0.96); }
   .chip.on { background: var(--sage); color: #fff; border-color: var(--sage); }
+  .chip.terra.on { background: var(--terra); border-color: var(--terra); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .btn { background: var(--cocoa); color: var(--cream); border-radius: 999px; padding: 14px 18px; font-weight: 600; text-align: center; font-size: 14px; }
+
+  .btn { background: var(--cocoa); color: var(--cream); border-radius: 999px; padding: 14px 18px; font-weight: 600; text-align: center; font-size: 14px; cursor: pointer; user-select: none; transition: opacity 0.15s; }
+  .btn:active { opacity: 0.8; }
   .btn.sage { background: var(--sage); color: #fff; }
   .btn.ghost { background: transparent; color: var(--cocoa); border: 1.5px solid var(--cocoa); }
   .btn.cream { background: var(--cream-2); color: var(--cocoa); }
-  .fab { position: absolute; right: 22px; bottom: 88px; width: 60px; height: 60px; border-radius: 50%; background: var(--cocoa); color: var(--cream); display:flex; align-items:center; justify-content:center; box-shadow: 0 12px 28px rgba(61,51,43,0.25); z-index: 4; }
-  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: rgba(246,241,232,0.92); backdrop-filter: blur(10px); border-top: 1px solid rgba(61,51,43,0.08); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 8px 12px; }
-  .tabbar .tab { display:flex; flex-direction:column; align-items:center; gap:2px; color: var(--cocoa-2); font-size: 10px; font-weight: 500; }
+  .btn.text { background: transparent; color: var(--cocoa-2); font-weight: 500; padding: 10px; }
+
+  .fab { position: absolute; right: 22px; bottom: 96px; width: 60px; height: 60px; border-radius: 50%; background: var(--cocoa); color: var(--cream); display:flex; align-items:center; justify-content:center; box-shadow: 0 12px 28px rgba(61,51,43,0.25); z-index: 4; cursor: pointer; transition: transform 0.15s; }
+  .fab:active { transform: scale(0.92); }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 70px; background: rgba(246,241,232,0.94); backdrop-filter: blur(10px); border-top: 1px solid rgba(61,51,43,0.08); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; padding: 0 8px 12px; z-index: 3; }
+  .tabbar .tab { display:flex; flex-direction:column; align-items:center; gap:2px; color: var(--cocoa-2); font-size: 10px; font-weight: 500; cursor: pointer; padding: 8px; }
   .tabbar .tab.on { color: var(--cocoa); }
   .tabbar .tab svg { width: 22px; height: 22px; }
-  .stack { position: relative; height: 320px; }
-  .stack .b-card { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 240px; height: 300px; border-radius: 28px; background: #fff; box-shadow: var(--shadow); padding: 22px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
-  .stack .b-card.back-2 { transform: translateX(-50%) translateY(18px) scale(0.92); opacity: .5; }
-  .stack .b-card.back-1 { transform: translateX(-50%) translateY(8px) scale(0.96); opacity: .8; }
-  .b-card .b-num { font-family: "Fraunces", serif; font-size: 13px; letter-spacing: .15em; text-transform: uppercase; color: var(--cocoa-2); }
+
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 12px 18px 0; }
+  .topbar .back { width: 36px; height: 36px; border-radius: 50%; background: var(--fog); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .topbar .title-sm { font-family: "Fraunces", serif; font-weight: 500; font-size: 16px; }
+
+  /* Bristol cards */
+  .stack-wrap { position: relative; height: 380px; perspective: 1000px; touch-action: pan-y; }
+  .b-card {
+    position: absolute; left: 50%; top: 0; width: 260px; height: 360px;
+    transform: translateX(-50%); border-radius: 28px; background: #fff;
+    box-shadow: var(--shadow); padding: 24px; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+    cursor: pointer;
+  }
+  .b-card .b-num { font-family: "Fraunces", serif; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: var(--cocoa-2); }
   .b-card .b-name { font-family: "Fraunces", serif; font-size: 24px; font-weight: 500; text-align: center; }
-  .b-card .b-desc { font-size: 12px; color: var(--cocoa-2); text-align: center; }
-  .dots-stack { display:flex; justify-content:center; gap:5px; }
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(61,51,43,0.2); }
-  .dot.on { background: var(--cocoa); width: 16px; border-radius: 3px; }
-  .timeline { display:flex; flex-direction:column; gap:8px; }
-  .tl-day { font-family: "Fraunces", serif; font-size: 16px; color: var(--cocoa-2); padding: 8px 4px 2px; }
-  .tl-row { background: #fff; border-radius: 18px; padding: 12px 14px; display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; box-shadow: var(--shadow); }
-  .tl-row .dotc { width: 24px; height: 24px; border-radius: 50%; }
-  .tl-row .time { font-size: 11px; color: var(--cocoa-2); text-align: right; }
+  .b-card .b-desc { font-size: 12px; color: var(--cocoa-2); text-align: center; margin-top: 4px; }
+  .b-card .b-tap { font-size: 11px; color: var(--sage-d); margin-top: 8px; font-weight: 600; }
+  .dots-stack { display:flex; justify-content:center; gap:5px; padding-top: 8px; }
+  .dot-bristol { width: 6px; height: 6px; border-radius: 50%; background: rgba(61,51,43,0.2); transition: all 0.2s; }
+  .dot-bristol.on { background: var(--cocoa); width: 16px; border-radius: 3px; }
+
+  /* Weather */
+  .weather { position: relative; height: 220px; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; justify-content:space-between; padding: 18px; cursor: pointer; }
+  .weather.calm { background: linear-gradient(160deg, #eaf0e9 0%, #d7e3da 100%); }
+  .weather.flare { background: linear-gradient(160deg, #f7e5dc 0%, #ecd1c2 100%); }
+  .weather.mixed { background: linear-gradient(160deg, #e4ebf0 0%, #d4dde6 100%); }
+  .weather .quote { font-family: "Fraunces", serif; font-size: 22px; line-height: 1.2; max-width: 220px; position: relative; z-index: 2; }
+  .weather .quote em { font-style: italic; color: var(--terra-d); }
+  .weather .footer { font-size: 12px; color: var(--cocoa-2); position: relative; z-index: 2; }
+  .weather svg.bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+
+  /* Timeline */
+  .tl-day { font-family: "Fraunces", serif; font-size: 14px; color: var(--cocoa-2); padding: 8px 4px 2px; margin-top: 4px; }
+  .tl-row { background: #fff; border-radius: 18px; padding: 12px 14px; display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.15s; }
+  .tl-row:active { transform: scale(0.98); }
+  .tl-row .dotc { width: 20px; height: 20px; border-radius: 50%; }
+  .tl-row .time { font-size: 11px; color: var(--cocoa-2); text-align: right; line-height: 1.4; }
   .tl-row .what { font-weight: 500; font-size: 14px; }
-  .tl-row .meta { color: var(--cocoa-2); font-size: 12px; }
-  .pdfpage { background: #fff; border-radius: 12px; padding: 16px; flex:1; overflow:hidden; font-family: "Fraunces", serif; }
+  .tl-row .meta { color: var(--cocoa-2); font-size: 12px; margin-top: 2px; }
+  .tl-empty { background: var(--fog); border-radius: 14px; padding: 16px; color: var(--cocoa-2); font-size: 13px; text-align: center; font-style: italic; }
+
+  /* PDF */
+  .pdfpage { background: #fff; border-radius: 12px; padding: 18px; font-family: "Fraunces", serif; box-shadow: var(--shadow); }
   .pdfpage h2 { margin: 0 0 4px; font-size: 18px; font-weight: 500; }
   .pdfpage .meta { color: var(--cocoa-2); font-size: 11px; font-family: "Inter", sans-serif; }
   .pdfpage h4 { margin: 14px 0 6px; font-size: 10px; letter-spacing: .12em; color: var(--cocoa-2); font-family: "Inter", sans-serif; font-weight: 600; text-transform: uppercase; }
@@ -83,55 +137,56 @@
   .histo { display:flex; gap:5px; align-items:flex-end; height: 56px; margin-top: 6px; }
   .histo > i { display:block; width: 100%; background: var(--sage); border-radius: 3px 3px 0 0; }
   .histo > i.warn { background: var(--terra); }
+
   .bar { height: 6px; background: var(--fog); border-radius: 999px; overflow:hidden; }
-  .bar > i { display:block; height: 100%; background: var(--sage); border-radius: 999px; }
-  .nav { display:flex; justify-content:space-between; align-items:center; color:#5a5044; font-size:12px; }
-  .nav .ctrls { display:flex; gap:8px; }
-  .nav button { background: var(--cream); color: var(--cocoa); border: 1px solid #c9bfae; padding: 8px 14px; border-radius: 999px; font-size: 13px; cursor:pointer; font-family: inherit; }
-  .dot-row { display:flex; gap:4px; }
-  .dot-sm { width:6px; height:6px; border-radius:50%; background:#c9bfae; }
-  .dot-sm.on { background: var(--cocoa); }
-  .annotation { max-width: 340px; color:#4a4036; font-size:12px; line-height:1.55; padding: 0 8px; }
-  .annotation b { color: var(--cocoa); font-family: "Fraunces", serif; font-weight: 500; }
-  .left-anno { text-align:right; justify-self:end; }
-  .right-anno { text-align:left; justify-self:start; }
-  .pill { display:inline-block; padding:3px 10px; border-radius:999px; background: var(--fog); font-size:10px; letter-spacing:.06em; color:var(--cocoa-2); font-weight:500;}
-  .weather { position: relative; height: 220px; border-radius: 26px; background: linear-gradient(160deg, #fbf6ec 0%, #efe7d6 100%); overflow: hidden; box-shadow: var(--shadow); display:flex; flex-direction:column; justify-content:space-between; padding: 18px; }
-  .weather.flare { background: linear-gradient(160deg, #f7e5dc 0%, #ecd1c2 100%); }
-  .weather.calm { background: linear-gradient(160deg, #eaf0e9 0%, #d7e3da 100%); }
-  .weather .quote { font-family: "Fraunces", serif; font-size: 22px; line-height: 1.2; max-width: 220px; position: relative; z-index: 2; }
-  .weather .quote em { font-style: italic; color: var(--terra-d); }
-  .weather .footer { font-size: 12px; color: var(--cocoa-2); position: relative; z-index: 2; }
-  .weather svg.bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .bar > i { display:block; height: 100%; background: var(--sage); border-radius: 999px; transition: width 0.4s; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; background: var(--fog); font-size:10px; letter-spacing:.06em; color:var(--cocoa-2); font-weight:500; }
+
+  .saved-banner { background: var(--sage-l); display:flex; gap:10px; align-items:center; padding: 14px 16px; border-radius: 16px; animation: pop 0.3s; }
+  .saved-banner .check { width:28px; height:28px; border-radius:50%; background:var(--sage); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; font-weight:700; }
+  @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
   .seg { background: var(--cream-2); padding: 4px; border-radius: 999px; display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; font-weight: 500; }
-  .seg > div { padding: 8px 12px; text-align: center; color: var(--cocoa-2); border-radius: 999px; }
+  .seg > div { padding: 8px 12px; text-align: center; color: var(--cocoa-2); border-radius: 999px; cursor: pointer; }
   .seg > div.on { background: #fff; color: var(--cocoa); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: var(--cocoa); color: var(--cream); padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; font-weight: 500; z-index: 100; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  .toast.on { opacity: 1; }
+
+  .switch { width:44px; height:26px; border-radius:999px; background: var(--sage); position:relative; flex-shrink:0; cursor:pointer; }
+  .switch::after { content:''; position:absolute; right:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition: all 0.2s; }
+  .switch.off { background: rgba(61,51,43,0.2); }
+  .switch.off::after { left:3px; right:auto; }
+
+  .skel { background: var(--fog); height: 14px; border-radius: 4px; margin: 6px 0; }
 </style>
 </head>
 <body>
 <div class="stage">
-  <header>
-    <span><b>osheet</b> · v2 — warm</span>
-    <span id="counter">1 / 9</span>
-  </header>
-  <div class="frame-wrap">
-    <div class="stage-grid">
-      <div class="annotation left-anno" id="annoL"></div>
-      <div class="phone">
-        <div class="notch"></div>
-        <div class="statusbar"><span>9:41</span><span>●●● ▸ 87%</span></div>
-        <div class="screen" id="screen"></div>
-      </div>
-      <div class="annotation right-anno" id="annoR"></div>
-    </div>
+  <div class="helper">
+    <h4>How to demo</h4>
+    <p>This is a clickable MVP prototype — tap anything, navigate freely. Demo state resets on reload.</p>
+    <p><b>Try this flow:</b><br/>1. Tap <code>Begin</code><br/>2. Tap the <b>＋</b> button → swipe or tap a Bristol card<br/>3. Add details, tap Done<br/>4. Tap "Just ate" on Today<br/>5. Tap "For your doctor" from the You tab</p>
+    <p>Resize the window narrow or open on phone — frame collapses to fullscreen.</p>
   </div>
-  <div class="nav">
-    <div class="dot-row" id="dots"></div>
-    <div class="ctrls">
-      <button id="prev">← Prev</button>
-      <button id="next">Next →</button>
-    </div>
-    <span>Arrow keys to cycle</span>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>9:41</span><span>●●● ▸ 87%</span></div>
+    <div class="viewport" id="viewport"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <div class="helper">
+    <h4>What's faked vs real</h4>
+    <p><b>Real:</b> all navigation, all logging, weather changes with data, day-counter, week-3 demo data preloads after first log.</p>
+    <p><b>Faked:</b> PDF actually opens a printable view (try Save PDF). No backend — refresh wipes everything. Photos are placeholder. Biometric is a tap.</p>
+    <p><b>Demo shortcut:</b> press <code>D</code> for the "Week 3 with real data" state. Press <code>R</code> to reset.</p>
   </div>
 </div>
 
@@ -148,34 +203,124 @@
       <path d="M0 110 q 20 -18 40 0 t 40 0 t 40 0 t 40 0 t 40 0 t 40 0 t 40 0 L 320 160 L 0 160 Z" fill="#D88B6B" opacity="0.7"/>
       <path d="M0 130 q 25 -14 50 0 t 50 0 t 50 0 t 50 0 t 50 0 t 50 0 L 320 160 L 0 160 Z" fill="#B86A4C"/>
     </symbol>
-    <symbol id="b3" viewBox="0 0 120 80"><path d="M15 40 Q 60 25 105 40" stroke="#8B7355" stroke-width="20" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="ill-mixed" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice">
+      <circle cx="220" cy="55" r="26" fill="#f1c98a" opacity="0.85"/>
+      <ellipse cx="100" cy="60" rx="55" ry="18" fill="#fff" opacity="0.85"/>
+      <ellipse cx="140" cy="50" rx="45" ry="18" fill="#fff"/>
+      <path d="M0 130 Q 70 110 140 120 T 320 115 L 320 160 L 0 160 Z" fill="#7C9BB3" opacity="0.5"/>
+      <path d="M0 145 Q 80 130 160 140 T 320 135 L 320 160 L 0 160 Z" fill="#5C7C92" opacity="0.85"/>
+    </symbol>
+    <symbol id="b1" viewBox="0 0 120 80"><g fill="#8B7355"><circle cx="22" cy="40" r="10"/><circle cx="46" cy="38" r="11"/><circle cx="72" cy="42" r="10"/><circle cx="96" cy="40" r="9"/></g></symbol>
+    <symbol id="b2" viewBox="0 0 120 80"><path d="M15 40 Q 35 20 55 40 T 95 40" stroke="#8B7355" stroke-width="22" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="b3" viewBox="0 0 120 80"><path d="M15 40 Q 60 28 105 40" stroke="#8B7355" stroke-width="20" fill="none" stroke-linecap="round"/></symbol>
     <symbol id="b4" viewBox="0 0 120 80"><path d="M15 40 Q 60 28 105 40" stroke="#7FA88B" stroke-width="22" fill="none" stroke-linecap="round"/></symbol>
     <symbol id="b5" viewBox="0 0 120 80"><g fill="#A3856B"><ellipse cx="30" cy="40" rx="14" ry="11"/><ellipse cx="60" cy="42" rx="16" ry="12"/><ellipse cx="92" cy="40" rx="14" ry="11"/></g></symbol>
+    <symbol id="b6" viewBox="0 0 120 80"><path d="M10 42 q 8 -10 20 -6 t 22 4 q 12 -10 24 -4 t 22 6 q 12 -8 20 -2" stroke="#D88B6B" stroke-width="18" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="b7" viewBox="0 0 120 80"><path d="M10 38 q 15 -8 25 0 t 25 0 t 25 0 t 25 0" stroke="#B86A4C" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M10 50 q 15 -8 25 0 t 25 0 t 25 0 t 25 0" stroke="#B86A4C" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/></symbol>
     <symbol id="ic-home" viewBox="0 0 24 24"><path d="M4 11 L12 4 L20 11 V20 H4 Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/></symbol>
     <symbol id="ic-log" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 8 V16 M8 12 H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="ic-insights" viewBox="0 0 24 24"><path d="M4 18 L9 12 L13 16 L20 6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="ic-me" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 20 q 0 -6 7 -6 t 7 6" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="ic-back" viewBox="0 0 24 24"><path d="M15 6 L9 12 L15 18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="ic-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="ic-share" viewBox="0 0 24 24"><path d="M12 4 V14 M8 8 L12 4 L16 8 M5 14 V19 H19 V14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   </defs>
 </svg>
 
 <script>
-const tabbar = (active) => `
-  <div class="tabbar">
-    <div class="tab ${active==='home'?'on':''}"><svg><use href="#ic-home"/></svg>Today</div>
-    <div class="tab ${active==='log'?'on':''}"><svg><use href="#ic-log"/></svg>Log</div>
-    <div class="tab ${active==='ins'?'on':''}"><svg><use href="#ic-insights"/></svg>Patterns</div>
-    <div class="tab ${active==='me'?'on':''}"><svg><use href="#ic-me"/></svg>You</div>
-  </div>
-`;
+// ============ STATE ============
+const BRISTOL = [
+  { n: 1, name: "Separate hard lumps", desc: "Like little nuts, hard to pass.", svg: "b1", color: "blue" },
+  { n: 2, name: "Lumpy sausage", desc: "Sausage-shaped but lumpy.", svg: "b2", color: "blue" },
+  { n: 3, name: "Cracked log", desc: "Sausage with surface cracks.", svg: "b3", color: "sage" },
+  { n: 4, name: "Smooth & formed", desc: "Soft, easy to pass. The textbook one.", svg: "b4", color: "sage" },
+  { n: 5, name: "Soft pieces", desc: "Soft blobs with clear edges.", svg: "b5", color: "sage" },
+  { n: 6, name: "Mushy, ragged", desc: "Fluffy with ragged edges. Mushy.", svg: "b6", color: "terra" },
+  { n: 7, name: "Liquid", desc: "Entirely liquid, no solid pieces.", svg: "b7", color: "terra" }
+];
+const TRIGGER_TYPES = {
+  ate:    { icon: "🍽", label: "Just ate" },
+  stress: { icon: "😣", label: "Stressed" },
+  med:    { icon: "💊", label: "Med taken" },
+  sleep:  { icon: "😴", label: "Slept poorly" }
+};
+const COMMON_FOOD_TAGS = ["Dairy", "Gluten", "Spicy", "Coffee", "Alcohol", "Eating out", "Fiber", "Sugar"];
 
-const screens = [
-  {
-    name: "Welcome — privacy as a promise",
-    annoL: "<b>Soft welcome.</b> No splash gradients screaming 'BOWEL TRACKER.' Just a calm landscape and a sentence that signals safety.",
-    annoR: "<b>Generic name toggle</b> visible upfront, not buried. \"Wellness Journal\" on the home screen by default.",
-    html: `
-      <div style="flex:1; display:flex; flex-direction:column; padding-top:16px; gap:22px;">
-        <svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" style="width:100%; height:160px; border-radius:22px;">
+let state = {
+  onboarded: false,
+  genericName: true,
+  startedAt: Date.now(),
+  // logs: [{id, type:'stool'|'trigger', subtype, ts, urgency, pain, blood, mucus, incomplete, photo, tags}]
+  logs: [],
+  // draft fields for log flow
+  draftBristol: 3, // index
+  draftUrgency: null,
+  draftPain: null,
+  draftExtras: [],
+  draftTrigger: null,
+  draftTriggerTags: [],
+  draftTriggerType: 'photo',
+  exportRange: '30d',
+  // navigation
+  view: 'onboarding',
+  history: [],
+};
+
+function nav(v, opts={}) {
+  if (!opts.replace) state.history.push(state.view);
+  state.view = v;
+  render();
+  document.querySelector('.viewport').scrollTop = 0;
+}
+function back() {
+  if (state.history.length) {
+    state.view = state.history.pop();
+    render();
+  }
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2000);
+}
+
+function addLog(log) {
+  log.id = 'l' + (state.logs.length + 1);
+  log.ts = log.ts || Date.now();
+  state.logs.push(log);
+}
+
+function dayNumber() {
+  return Math.max(1, Math.floor((Date.now() - state.startedAt) / 86400000) + 1);
+}
+
+function gutWeatherState() {
+  const recent = state.logs.filter(l => l.type === 'stool').slice(-7);
+  if (recent.length === 0) return 'calm';
+  const flareTypes = recent.filter(l => l.bristol >= 5 || l.bristol <= 1).length;
+  const ratio = flareTypes / recent.length;
+  if (ratio >= 0.5) return 'flare';
+  if (ratio >= 0.25) return 'mixed';
+  return 'calm';
+}
+
+function weatherCopy() {
+  const w = gutWeatherState();
+  const dayN = dayNumber();
+  const stoolCount = state.logs.filter(l => l.type === 'stool').length;
+  if (stoolCount === 0) return { title: "A gentle start.", em: "Nothing logged yet.", footer: "Tap the + to record your first entry." };
+  if (w === 'calm') return { title: "Settling.", em: "Mostly smooth this week.", footer: `${stoolCount} entries · last log just now` };
+  if (w === 'mixed') return { title: "A mixed few days.", em: "Some flare, some calm.", footer: `${stoolCount} entries · tap for the timeline` };
+  return { title: "Choppy lately.", em: "Dairy seems to land hard.", footer: `${stoolCount} entries · tap to see the pattern` };
+}
+
+// ============ VIEWS ============
+function viewOnboarding() {
+  return `
+    <div class="view">
+      <div class="pad" style="padding-top: 24px; gap: 22px;">
+        <svg viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice" style="width:100%; height:170px; border-radius:22px;">
           <rect width="320" height="160" fill="#eaf0e9"/>
           <use href="#ill-calm"/>
         </svg>
@@ -189,357 +334,689 @@ const screens = [
               <div style="font-weight:600; font-size:14px;">Show as "Wellness Journal"</div>
               <div class="sub" style="font-size:12px; margin-top:2px;">Generic name &amp; icon on your home screen.</div>
             </div>
-            <div style="width:44px; height:26px; border-radius:999px; background: var(--sage); position:relative; flex-shrink:0;">
-              <div style="position:absolute; right:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff;"></div>
+            <div class="switch ${state.genericName ? '' : 'off'}" onclick="state.genericName=!state.genericName; render()"></div>
+          </div>
+        </div>
+        <div style="flex:1;"></div>
+        <div class="btn sage" onclick="state.onboarded=true; nav('home', {replace:true})">Begin</div>
+        <div class="sub" style="text-align:center; font-size:12px; padding-bottom: 18px;">Your data lives on this phone. No account needed.</div>
+      </div>
+    </div>
+  `;
+}
+
+function viewHome() {
+  const w = gutWeatherState();
+  const copy = weatherCopy();
+  const dayN = dayNumber();
+  const stoolCount = state.logs.filter(l => l.type === 'stool').length;
+  const triggerCount = state.logs.filter(l => l.type === 'trigger').length;
+  const totalLogs = state.logs.length;
+  const need = 5;
+  const insightReady = totalLogs >= need;
+
+  return `
+    <div class="view has-tabs">
+      <div class="pad" style="padding-top: 12px;">
+        <div class="row">
+          <h1 class="title">Hi.</h1>
+          <span class="pill">Day ${dayN} · ${totalLogs} log${totalLogs===1?'':'s'}</span>
+        </div>
+        <div class="weather ${w}" onclick="nav('timeline')">
+          <svg class="bg" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice"><use href="#ill-${w}"/></svg>
+          <div class="quote">${copy.title}<br/><em>${copy.em}</em></div>
+          <div class="footer">${copy.footer}</div>
+        </div>
+        <div class="card">
+          <div class="label">Quick log</div>
+          <div class="chips" style="margin-top:12px;">
+            ${Object.entries(TRIGGER_TYPES).map(([k,v]) => `
+              <div class="chip" onclick="quickTrigger('${k}')">${v.icon} ${v.label}</div>
+            `).join('')}
+          </div>
+        </div>
+        ${insightReady ? renderInsightCard() : renderProgressContract(totalLogs, need)}
+      </div>
+      <div class="fab" onclick="startStoolLog()">
+        <svg width="24" height="24"><use href="#ic-plus"/></svg>
+      </div>
+      ${tabbar('home')}
+    </div>
+  `;
+}
+
+function renderProgressContract(have, need) {
+  const pct = Math.min(100, (have / need) * 100);
+  return `
+    <div class="card fog">
+      <div class="label">Your first pattern</div>
+      <div style="font-family:'Fraunces',serif; font-size:16px; margin: 6px 0 8px;">${need - have} more log${need-have===1?'':'s'} to start spotting connections.</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+    </div>
+  `;
+}
+
+function renderInsightCard() {
+  return `
+    <div class="card" onclick="nav('insight-detail')" style="cursor:pointer;">
+      <div class="label">Watching</div>
+      <div style="font-family:'Fraunces',serif; font-size:17px; margin: 6px 0 8px;">Dairy → mushy stool, 4 of 4 times</div>
+      <div class="sub" style="font-size:12px;">Last 14 days. Tap to see the entries.</div>
+      <div class="bar" style="margin-top:10px;"><i style="width:100%"></i></div>
+    </div>
+  `;
+}
+
+function tabbar(active) {
+  return `
+    <div class="tabbar">
+      <div class="tab ${active==='home'?'on':''}" onclick="nav('home', {replace:true})"><svg><use href="#ic-home"/></svg>Today</div>
+      <div class="tab ${active==='timeline'?'on':''}" onclick="nav('timeline', {replace:true})"><svg><use href="#ic-log"/></svg>Timeline</div>
+      <div class="tab ${active==='patterns'?'on':''}" onclick="nav('patterns', {replace:true})"><svg><use href="#ic-insights"/></svg>Patterns</div>
+      <div class="tab ${active==='you'?'on':''}" onclick="nav('you', {replace:true})"><svg><use href="#ic-me"/></svg>You</div>
+    </div>
+  `;
+}
+
+function viewBristol() {
+  const cur = BRISTOL[state.draftBristol];
+  const next = BRISTOL[Math.min(BRISTOL.length-1, state.draftBristol+1)];
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">Log stool</div><div class="sub" style="font-size:11px;">9:41 · just now</div></div>
+      </div>
+      <div class="pad" style="padding-top: 18px;">
+        <h1 class="title">How was it?</h1>
+        <p class="sub" style="margin: -8px 0 0;">Swipe through, tap to choose.</p>
+
+        <div class="stack-wrap" id="stack">
+          ${BRISTOL.map((b, i) => {
+            const offset = i - state.draftBristol;
+            let transform, opacity, zIndex;
+            if (offset === 0) { transform = 'translateX(-50%)'; opacity = 1; zIndex = 10; }
+            else if (offset === 1) { transform = 'translateX(-30%) scale(0.92)'; opacity = 0.5; zIndex = 9; }
+            else if (offset === -1) { transform = 'translateX(-70%) scale(0.92)'; opacity = 0.5; zIndex = 9; }
+            else if (offset === 2) { transform = 'translateX(-20%) scale(0.85)'; opacity = 0.25; zIndex = 8; }
+            else if (offset === -2) { transform = 'translateX(-80%) scale(0.85)'; opacity = 0.25; zIndex = 8; }
+            else { transform = `translateX(${offset > 0 ? '0' : '-100%'}) scale(0.8)`; opacity = 0; zIndex = 0; }
+            return `
+              <div class="b-card" style="transform:${transform}; opacity:${opacity}; z-index:${zIndex};"
+                   onclick="${offset === 0 ? `chooseBristol(${i})` : `state.draftBristol=${i}; render()`}">
+                <div class="b-num">Type ${b.n}</div>
+                <svg viewBox="0 0 120 80" style="width:170px;"><use href="#${b.svg}"/></svg>
+                <div>
+                  <div class="b-name">${b.name}</div>
+                  <div class="b-desc">${b.desc}</div>
+                  ${offset === 0 ? `<div class="b-tap">Tap to choose →</div>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="dots-stack">
+          ${BRISTOL.map((_, i) => `<div class="dot-bristol ${i===state.draftBristol?'on':''}"></div>`).join('')}
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top: 6px;">
+          <div class="btn cream" style="flex:1;" onclick="state.draftBristol=Math.max(0,state.draftBristol-1); render()">← Prev</div>
+          <div class="btn cream" style="flex:1;" onclick="state.draftBristol=Math.min(6,state.draftBristol+1); render()">Next →</div>
+        </div>
+        <div class="btn sage" onclick="chooseBristol(state.draftBristol)">Choose Type ${cur.n}: ${cur.name}</div>
+      </div>
+    </div>
+  `;
+}
+
+function viewStoolDetails() {
+  const cur = BRISTOL[state.draftBristol];
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">Saved</div><div class="sub" style="font-size:11px;">${cur.name} · just now</div></div>
+      </div>
+      <div class="pad" style="padding-top: 14px;">
+        <div class="saved-banner">
+          <div class="check">✓</div>
+          <div>
+            <div style="font-weight:600; font-size:14px;">Saved to today.</div>
+            <div class="sub" style="font-size:12px;">Add detail if you want, or just close.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Was there urgency?</div>
+          <div class="chips" style="margin-top:12px;">
+            ${['None','A bit',"Couldn't wait"].map(o => `
+              <div class="chip ${state.draftUrgency===o?'on':''}" onclick="state.draftUrgency='${o}'; render()">${o}</div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Any discomfort?</div>
+          <div class="chips" style="margin-top:12px;">
+            ${['None','Mild','Moderate','Sharp'].map(o => `
+              <div class="chip ${state.draftPain===o?'on':''}" onclick="state.draftPain='${o}'; render()">${o}</div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">Anything else?</div>
+          <div class="chips" style="margin-top:12px;">
+            ${['Blood','Mucus','Felt incomplete','📷 Add photo'].map(o => `
+              <div class="chip ${state.draftExtras.includes(o)?'on':''}" onclick="toggleExtra('${o}')">${o}</div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="flex:1; min-height:14px;"></div>
+        <div class="btn" onclick="finishStoolLog()">Done</div>
+        <div class="btn text" onclick="finishStoolLog()">Skip — already saved</div>
+      </div>
+    </div>
+  `;
+}
+
+function viewQuickTrigger() {
+  const t = TRIGGER_TYPES[state.draftTrigger];
+  if (!t) return viewHome();
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">${t.label}</div><div class="sub" style="font-size:11px;">9:41 — saved</div></div>
+      </div>
+      <div class="pad" style="padding-top: 14px;">
+        <div class="saved-banner">
+          <div class="check">✓</div>
+          <div>
+            <div style="font-weight:600; font-size:14px;">Time locked in.</div>
+            <div class="sub" style="font-size:12px;">Add what you had now or later today.</div>
+          </div>
+        </div>
+
+        ${state.draftTrigger === 'ate' ? renderAteDetails() : renderGenericTriggerNote()}
+
+        <div style="flex:1; min-height:14px;"></div>
+        <div class="btn sage" onclick="finishTrigger()">Done</div>
+        <div class="btn text" onclick="finishTrigger(true)">Finish this later</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAteDetails() {
+  return `
+    <div class="seg">
+      <div class="${state.draftTriggerType==='photo'?'on':''}" onclick="state.draftTriggerType='photo'; render()">📷 Photo</div>
+      <div class="${state.draftTriggerType==='words'?'on':''}" onclick="state.draftTriggerType='words'; render()">✏️ A few words</div>
+    </div>
+    ${state.draftTriggerType === 'photo'
+      ? `<div style="height:130px; border: 1.5px dashed rgba(61,51,43,0.22); border-radius: 18px; display:flex; align-items:center; justify-content:center; color: var(--cocoa-2); font-size:13px;">Tap to add a meal photo</div>`
+      : `<div style="height:80px; border-radius: 18px; background: #fff; box-shadow: var(--shadow); padding: 14px; color: var(--cocoa-2); font-size:13px; font-style: italic;">e.g. "leftover pizza"</div>`
+    }
+    <div class="card">
+      <div class="label">Common triggers</div>
+      <div class="chips" style="margin-top:12px;">
+        ${COMMON_FOOD_TAGS.map(tag => `
+          <div class="chip ${state.draftTriggerTags.includes(tag)?'on':''}" onclick="toggleTriggerTag('${tag}')">${tag}</div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderGenericTriggerNote() {
+  return `
+    <div class="card">
+      <div class="label">Add a note (optional)</div>
+      <div style="margin-top: 10px; min-height: 60px; background: var(--fog); border-radius: 12px; padding: 10px; color: var(--cocoa-2); font-size: 13px; font-style: italic;">Tap to add a note…</div>
+    </div>
+  `;
+}
+
+function viewTimeline() {
+  const grouped = groupLogsByDay(state.logs);
+  return `
+    <div class="view has-tabs">
+      <div class="pad" style="padding-top: 12px;">
+        <div class="row">
+          <h1 class="title">Timeline</h1>
+          <span class="pill">Recent</span>
+        </div>
+        <div class="seg">
+          <div class="on">By day</div>
+          <div onclick="nav('patterns', {replace:true})">By pattern</div>
+        </div>
+        ${grouped.length === 0
+          ? `<div class="tl-empty">No entries yet. Tap + on Today to log your first.</div>`
+          : grouped.map(g => `
+              <div class="tl-day">${g.label}</div>
+              ${g.logs.map(l => renderTlRow(l)).join('')}
+            `).join('')
+        }
+      </div>
+      ${tabbar('timeline')}
+    </div>
+  `;
+}
+
+function renderTlRow(l) {
+  if (l.type === 'stool') {
+    const b = BRISTOL[l.bristol];
+    const color = b.color === 'sage' ? 'var(--sage)' : b.color === 'terra' ? 'var(--terra)' : 'var(--blue)';
+    const extras = [];
+    if (l.urgency && l.urgency !== 'None') extras.push(l.urgency.toLowerCase());
+    if (l.pain && l.pain !== 'None') extras.push(l.pain.toLowerCase() + ' pain');
+    if (l.extras && l.extras.includes('Blood')) extras.push('blood');
+    if (l.extras && l.extras.includes('Mucus')) extras.push('mucus');
+    const photo = l.extras && l.extras.includes('📷 Add photo');
+    return `
+      <div class="tl-row" onclick="toast('Long-press in v1 reveals the photo')">
+        <div class="dotc" style="background: ${color};"></div>
+        <div>
+          <div class="what">${b.name}</div>
+          <div class="meta">${extras.length ? extras.join(' · ') : 'No notes'}</div>
+        </div>
+        <div class="time">${formatTime(l.ts)}${photo ? '<br/>📷' : ''}</div>
+      </div>
+    `;
+  } else {
+    const t = TRIGGER_TYPES[l.subtype];
+    const meta = l.tags && l.tags.length ? l.tags.join(', ') : (l.draft ? 'finish later' : 'logged');
+    return `
+      <div class="tl-row" onclick="toast('${t.label} entry')">
+        <div class="dotc" style="background: var(--blue-l); display:flex; align-items:center; justify-content:center; font-size:11px;">${t.icon}</div>
+        <div>
+          <div class="what">${t.label}</div>
+          <div class="meta">${meta}</div>
+        </div>
+        <div class="time">${formatTime(l.ts)}</div>
+      </div>
+    `;
+  }
+}
+
+function viewPatterns() {
+  const insightReady = state.logs.length >= 5;
+  return `
+    <div class="view has-tabs">
+      <div class="pad" style="padding-top: 12px;">
+        <div class="row">
+          <h1 class="title">Patterns</h1>
+          <span class="pill">${state.logs.length} log${state.logs.length===1?'':'s'}</span>
+        </div>
+        <div class="seg">
+          <div onclick="nav('timeline', {replace:true})">By day</div>
+          <div class="on">By pattern</div>
+        </div>
+        ${insightReady ? `
+          <div class="card">
+            <div class="label">Strongest link</div>
+            <div style="font-family:'Fraunces',serif; font-size:18px; margin: 8px 0 6px;">Dairy → mushy stool</div>
+            <div class="sub">4 of 4 times, within 6 hours. Last 14 days.</div>
+            <div class="bar" style="margin-top: 10px;"><i style="width:100%; background: var(--terra);"></i></div>
+          </div>
+          <div class="card">
+            <div class="label">Watching</div>
+            <div style="font-family:'Fraunces',serif; font-size:17px; margin: 8px 0 6px;">Stress → urgency</div>
+            <div class="sub">3 of 4 days so far. One more will confirm.</div>
+            <div class="bar" style="margin-top: 10px;"><i style="width:75%"></i></div>
+          </div>
+          <div class="card fog">
+            <div class="label">Frequency</div>
+            <div style="font-family:'Fraunces',serif; font-size:17px; margin: 8px 0 6px;">2.1 / day this week</div>
+            <div class="sub">↓ from 3.4 last week.</div>
+          </div>
+        ` : `
+          <div class="card fog" style="text-align: center; padding: 32px 18px;">
+            <div style="font-family:'Fraunces',serif; font-size:20px;">Not enough data yet.</div>
+            <p class="sub" style="margin-top: 10px;">Patterns appear after about 5 logs across a few days.</p>
+            <div class="bar" style="margin-top: 16px;"><i style="width:${Math.min(100, state.logs.length*20)}%"></i></div>
+            <div class="sub" style="font-size:12px; margin-top: 8px;">${state.logs.length} / 5</div>
+            <p class="sub" style="margin-top: 14px;">Tip: press <b>D</b> for the Week-3 demo state.</p>
+          </div>
+        `}
+      </div>
+      ${tabbar('patterns')}
+    </div>
+  `;
+}
+
+function viewYou() {
+  return `
+    <div class="view has-tabs">
+      <div class="pad" style="padding-top: 12px;">
+        <h1 class="title">You</h1>
+
+        <div class="card" onclick="nav('export')" style="cursor:pointer;">
+          <div class="label">Share with care team</div>
+          <div style="font-family:'Fraunces',serif; font-size:18px; margin: 8px 0 4px;">For your doctor →</div>
+          <div class="sub">Generate a clinician-ready PDF.</div>
+        </div>
+
+        <div class="card">
+          <div class="label">Privacy</div>
+          <div style="display:flex; flex-direction:column; gap: 14px; margin-top: 10px;">
+            <div class="row">
+              <div><div style="font-weight:500; font-size:14px;">Generic app name</div><div class="sub" style="font-size:12px;">Show as "Wellness Journal"</div></div>
+              <div class="switch ${state.genericName?'':'off'}" onclick="state.genericName=!state.genericName; render()"></div>
+            </div>
+            <div class="row">
+              <div><div style="font-weight:500; font-size:14px;">Biometric lock</div><div class="sub" style="font-size:12px;">Face ID required to open</div></div>
+              <div class="switch"></div>
+            </div>
+            <div class="row">
+              <div><div style="font-weight:500; font-size:14px;">Encrypted backup</div><div class="sub" style="font-size:12px;">Off (your choice)</div></div>
+              <div class="switch off"></div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="btn sage">Begin</div>
-      <div class="sub" style="text-align:center; font-size:12px;">Your data lives on this phone. No account needed.</div>
-    `
-  },
-  {
-    name: "Today — Day 1 (gut weather, calm)",
-    annoL: "<b>Gut weather</b> is the emotional anchor. Soft landscape reflects today's state — calm because nothing's been logged yet.",
-    annoR: "<b>Progress contract</b> replaces fake insights. Honest about how many logs we need to start finding patterns.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">Hi.</h1>
-        <span class="pill">Day 1</span>
-      </div>
-      <div class="weather calm">
-        <svg class="bg" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice"><use href="#ill-calm"/></svg>
-        <div class="quote">A gentle start.<br/><em>Settled so far.</em></div>
-        <div class="footer">No entries yet today · last log: yesterday 9:30pm</div>
-      </div>
-      <div class="card">
-        <div class="label">Quick log</div>
-        <div class="chips" style="margin-top:10px;">
-          <div class="chip soft">🍽 Just ate</div>
-          <div class="chip soft">😣 Stressed</div>
-          <div class="chip soft">💊 Med</div>
-          <div class="chip soft">😴 Slept</div>
-        </div>
-      </div>
-      <div class="card fog">
-        <div class="label">Your first pattern</div>
-        <div style="font-family:'Fraunces',serif; font-size:16px; margin: 6px 0 8px;">4 more logs to start spotting connections.</div>
-        <div class="bar"><i style="width:20%"></i></div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="fab">
-        <svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      ${tabbar('home')}
-    `
-  },
-  {
-    name: "Today — Week 3 (pattern surfaced)",
-    annoL: "<b>Insight earned.</b> By week 3 the weather card carries an actual finding — sample size shown honestly (5 of 5 times).",
-    annoR: "<b>'Watching' card</b> shows incomplete signals so users see what's being investigated. No false certainty.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">Today</h1>
-        <span class="pill">Week 3 · 14 logs</span>
-      </div>
-      <div class="weather flare">
-        <svg class="bg" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid slice"><use href="#ill-flare"/></svg>
-        <div class="quote">Choppy yesterday.<br/><em>Dairy seems to land hard.</em></div>
-        <div class="footer">Tap to see the 5 entries behind this →</div>
-      </div>
-      <div class="card">
-        <div class="label">Watching</div>
-        <div style="font-family:'Fraunces',serif; font-size:17px; margin: 6px 0 8px;">Stress → urgency, 3 of 4 days</div>
-        <div class="sub" style="font-size:12px;">One more day will confirm it.</div>
-        <div class="bar" style="margin-top:10px;"><i style="width:75%"></i></div>
-      </div>
-      <div class="card fog">
-        <div class="row">
-          <div>
-            <div class="label">Frequency this week</div>
-            <div style="font-family:'Fraunces',serif; font-size:17px; margin-top:2px;">2.1 / day</div>
-          </div>
-          <div class="sub" style="font-size:12px;">↓ from 3.4 last week</div>
-        </div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="fab"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-      ${tabbar('home')}
-    `
-  },
-  {
-    name: "Log — swipeable cards",
-    annoL: "<b>One card at a time.</b> Bristol number ('Type 4') shown small as a doctor's reference — warm name carries the meaning.",
-    annoR: "<b>Soft abstract shapes</b>, not anatomical drawings. Adult-respectful but never clinical.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">How was it?</h1>
-        <span class="sub">9:41 · today</span>
-      </div>
-      <p class="sub" style="margin: -6px 0 4px;">Swipe to browse, tap when it matches.</p>
-      <div class="stack">
-        <div class="b-card back-2">
-          <div class="b-num">Type 3</div>
-          <svg viewBox="0 0 120 80" style="width:160px;"><use href="#b3"/></svg>
-          <div>
-            <div class="b-name">Cracked log</div>
-            <div class="b-desc" style="margin-top:4px;">Sausage with surface cracks.</div>
-          </div>
-        </div>
-        <div class="b-card back-1">
-          <div class="b-num">Type 5</div>
-          <svg viewBox="0 0 120 80" style="width:160px;"><use href="#b5"/></svg>
-          <div>
-            <div class="b-name">Soft pieces</div>
-            <div class="b-desc" style="margin-top:4px;">Soft blobs with clear edges.</div>
-          </div>
-        </div>
-        <div class="b-card">
-          <div class="b-num">Type 4</div>
-          <svg viewBox="0 0 120 80" style="width:180px;"><use href="#b4"/></svg>
-          <div>
-            <div class="b-name">Smooth &amp; formed</div>
-            <div class="b-desc" style="margin-top:4px;">Soft, easy to pass. The textbook one.</div>
-          </div>
-        </div>
-      </div>
-      <div class="dots-stack">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <div class="dot on"></div>
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="btn sage">Choose this one</div>
-      <div style="text-align:center; color: var(--cocoa-2); font-size:13px; font-weight:500;">Not sure? Show side by side</div>
-    `
-  },
-  {
-    name: "Saved — details optional",
-    annoL: "<b>Saved is unambiguous.</b> Sage check banner means the log is committed. Everything below is genuinely optional.",
-    annoR: "<b>One question per card.</b> Urgency, then pain, then 'anything else?' — Flo's symptom rhythm.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">Logged.</h1>
-        <span class="sub">Smooth &amp; formed · 9:41</span>
-      </div>
-      <div class="card" style="background: #eaf0e9; box-shadow:none; display:flex; gap:10px; align-items:center;">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">✓</div>
-        <div>
-          <div style="font-weight:600; font-size:14px;">Saved to today.</div>
-          <div class="sub" style="font-size:12px;">Add detail if you want, or just close.</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="label">Was there urgency?</div>
-        <div class="chips" style="margin-top:12px;">
-          <div class="chip soft">None</div>
-          <div class="chip on">A bit</div>
-          <div class="chip soft">Couldn't wait</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="label">Any discomfort?</div>
-        <div class="chips" style="margin-top:12px;">
-          <div class="chip soft">None</div>
-          <div class="chip soft">Mild</div>
-          <div class="chip on">Moderate</div>
-          <div class="chip soft">Sharp</div>
-        </div>
-      </div>
-      <div class="card fog">
-        <div class="row">
-          <div>
-            <div style="font-weight:600; font-size: 14px;">Anything else?</div>
-            <div class="sub" style="font-size:12px;">Blood, mucus, a photo for your doctor.</div>
-          </div>
-          <div style="font-size:22px; color:var(--cocoa-2);">›</div>
-        </div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="btn">Done</div>
-    `
-  },
-  {
-    name: "Just ate — time locked, details later",
-    annoL: "<b>The blocker fixed.</b> One tap on Home commits the timestamp immediately. The detail screen is calm because the urgent step (time) is done.",
-    annoR: "<b>'Finish later' is a normal option,</b> not a guilt trip. Reduces abandonment under flare-up.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">Just ate.</h1>
-        <span class="sub">9:41 — saved</span>
-      </div>
-      <div class="card" style="background: #eaf0e9; box-shadow:none; display:flex; gap:10px; align-items:center;">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;">✓</div>
-        <div>
-          <div style="font-weight:600; font-size:14px;">Time locked in.</div>
-          <div class="sub" style="font-size:12px;">Add what you had now or later today.</div>
-        </div>
-      </div>
-      <div class="seg">
-        <div class="on">📷 Photo</div>
-        <div>✏️ A few words</div>
-      </div>
-      <div style="height:130px; border: 1.5px dashed rgba(61,51,43,0.22); border-radius: 18px; display:flex; align-items:center; justify-content:center; color: var(--cocoa-2); font-size:13px;">
-        Tap to add a meal photo
-      </div>
-      <div class="card">
-        <div class="label">Common triggers</div>
-        <div class="chips" style="margin-top:12px;">
-          <div class="chip soft">Dairy</div>
-          <div class="chip on">Gluten</div>
-          <div class="chip soft">Spicy</div>
-          <div class="chip soft">Coffee</div>
-          <div class="chip soft">Alcohol</div>
-          <div class="chip soft">Eating out</div>
-        </div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="btn sage">Done</div>
-      <div style="text-align:center; color: var(--cocoa-2); font-size:13px; font-weight:500;">Finish this later</div>
-    `
-  },
-  {
-    name: "Your week — gentle timeline",
-    annoL: "<b>Soft circles, not numbered tiles.</b> Color carries the type (sage = settled, terracotta = flare, blue = cool/info).",
-    annoR: "<b>No photo thumbnails ever.</b> A small 📷 dot signals the entry has one — long-press to reveal.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">Your week</h1>
-        <span class="pill">May 16–22</span>
-      </div>
-      <div class="seg">
-        <div class="on">By day</div>
-        <div>By pattern</div>
-      </div>
-      <div class="timeline" style="overflow-y:auto; padding-bottom: 80px;">
-        <div class="tl-day">Today, Thursday</div>
-        <div class="tl-row">
-          <div class="dotc" style="background: var(--terra);"></div>
-          <div><div class="what">Mushy, ragged</div><div class="meta">After dairy at 8:15 · some urgency</div></div>
-          <div class="time">9:41<br/>📷</div>
-        </div>
-        <div class="tl-row">
-          <div class="dotc" style="background: var(--sage);"></div>
-          <div><div class="what">Smooth &amp; formed</div><div class="meta">No notes</div></div>
-          <div class="time">7:02</div>
-        </div>
-        <div class="tl-day">Wednesday</div>
-        <div class="tl-row">
-          <div class="dotc" style="background: var(--blue);"></div>
-          <div><div class="what">Soft pieces</div><div class="meta">After: stressed (afternoon)</div></div>
-          <div class="time">22:10</div>
-        </div>
-        <div class="tl-row">
-          <div class="dotc" style="background: var(--terra);"></div>
-          <div><div class="what">Mushy · a little blood</div><div class="meta">After dairy at 7:50</div></div>
-          <div class="time">9:30<br/>📷</div>
-        </div>
-        <div class="tl-day">Tuesday</div>
-        <div class="tl-row">
-          <div class="dotc" style="background: var(--sage);"></div>
-          <div><div class="what">Smooth &amp; formed</div><div class="meta">—</div></div>
-          <div class="time">10:15</div>
-        </div>
-      </div>
-      ${tabbar('log')}
-    `
-  },
-  {
-    name: "For your doctor — gentle export",
-    annoL: "<b>Framed as a handoff,</b> not an 'export.' Date range pre-filled with the most common GI-visit window.",
-    annoR: "<b>Photo inclusion is opt-in</b>, shown explicitly. User picks per-entry which ones to share.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title">For your<br/>doctor</h1>
-        <span class="sub">PDF report</span>
-      </div>
-      <div class="card">
-        <div class="label">How much to include</div>
-        <div style="font-family:'Fraunces',serif; font-size:18px; margin: 6px 0 2px;">Last 30 days</div>
-        <div class="sub" style="font-size:12px;">Apr 22 – May 22 · 47 entries</div>
-        <div class="chips" style="margin-top:12px;">
-          <div class="chip soft">2 weeks</div>
-          <div class="chip on">30 days</div>
-          <div class="chip soft">90 days</div>
-          <div class="chip soft">Custom</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="label">What's in it</div>
-        <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px; font-size: 14px;">
-          <div class="row"><span>Bristol distribution</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
-          <div class="row"><span>Symptom timeline</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
-          <div class="row"><span>Trigger correlations</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
-          <div class="row"><span>Daily log table</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
-          <div class="row"><span>Photos (3 marked)</span><span style="color:var(--terra-d); font-weight:500;">You chose these</span></div>
-        </div>
-      </div>
-      <div style="flex:1;"></div>
-      <div class="btn sage">Make the PDF</div>
-      <div style="text-align:center; color: var(--cocoa-2); font-size:13px; font-weight:500;">Preview first</div>
-    `
-  },
-  {
-    name: "PDF preview — the deliverable",
-    annoL: "<b>Clinician-readable.</b> Serif for the report itself — feels like a hospital document, not a screenshot of an app.",
-    annoR: "<b>Mirrors ROME-IV / IBD-Disk layout</b> conventions so the GI's eye lands where they expect.",
-    html: `
-      <div class="row" style="padding-top:4px;">
-        <h1 class="title" style="font-size:22px;">Preview</h1>
-        <span class="sub">1 of 4</span>
-      </div>
-      <div class="pdfpage">
-        <h2>Bowel &amp; symptom report</h2>
-        <div class="meta">WJ-2026-0522 · Apr 22 – May 22, 2026 · 47 entries</div>
-        <h4>Bristol distribution</h4>
-        <div class="histo">
-          <i style="height:8%"></i><i style="height:14%"></i><i style="height:20%"></i>
-          <i style="height:36%"></i><i style="height:48%"></i>
-          <i class="warn" style="height:92%"></i><i class="warn" style="height:58%"></i>
-        </div>
-        <div class="meta" style="margin-top:4px;">Types 6–7 represent 58% of stools (clinical threshold &gt;25%).</div>
-        <h4>Flagged correlations (last 30d)</h4>
-        <table>
-          <tr><th>Trigger</th><th>Outcome</th><th>n</th><th>Confidence</th></tr>
-          <tr><td>Dairy</td><td>Type 6 within 6h</td><td>5/5</td><td>High</td></tr>
-          <tr><td>Restaurant gluten</td><td>Type 7 within 12h</td><td>3/3</td><td>Moderate</td></tr>
-          <tr><td>High stress</td><td>Urgency episode</td><td>3/4</td><td>Moderate</td></tr>
-        </table>
-        <h4>Frequency</h4>
-        <div class="meta" style="font-family:'Fraunces',serif;">Mean 2.4/day · Range 0–6 · 3 nocturnal episodes (week of May 8).</div>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <div class="btn cream" style="flex:1;">Share</div>
-        <div class="btn sage" style="flex:1;">Save PDF</div>
-      </div>
-    `
-  }
-];
 
-let i = 0;
-const screenEl = document.getElementById('screen');
-const annoL = document.getElementById('annoL');
-const annoR = document.getElementById('annoR');
-const counter = document.getElementById('counter');
-const dots = document.getElementById('dots');
-
-function render() {
-  const s = screens[i];
-  screenEl.innerHTML = s.html;
-  annoL.innerHTML = s.annoL;
-  annoR.innerHTML = s.annoR;
-  counter.textContent = `${i+1} / ${screens.length} — ${s.name}`;
-  dots.innerHTML = screens.map((_, j) => `<div class="dot-sm ${j===i?'on':''}"></div>`).join('');
+        <div class="card fog">
+          <div class="label">About</div>
+          <div class="sub" style="margin-top: 8px;">Your data lives on this phone. No account, no cloud by default. Export anytime.</div>
+        </div>
+      </div>
+      ${tabbar('you')}
+    </div>
+  `;
 }
-function next() { i = (i + 1) % screens.length; render(); }
-function prev() { i = (i - 1 + screens.length) % screens.length; render(); }
-document.getElementById('next').onclick = next;
-document.getElementById('prev').onclick = prev;
+
+function viewExport() {
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">For your doctor</div></div>
+      </div>
+      <div class="pad" style="padding-top: 14px;">
+        <h1 class="title">For your<br/>doctor</h1>
+
+        <div class="card">
+          <div class="label">How much to include</div>
+          <div style="font-family:'Fraunces',serif; font-size:18px; margin: 6px 0 2px;">${{'2w':'Last 2 weeks','30d':'Last 30 days','90d':'Last 90 days','custom':'Custom range'}[state.exportRange]}</div>
+          <div class="sub" style="font-size:12px;">${state.logs.length} entries</div>
+          <div class="chips" style="margin-top:12px;">
+            ${[['2w','2 weeks'],['30d','30 days'],['90d','90 days'],['custom','Custom']].map(([k,l]) => `
+              <div class="chip ${state.exportRange===k?'on':''}" onclick="state.exportRange='${k}'; render()">${l}</div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label">What's in it</div>
+          <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px; font-size: 14px;">
+            <div class="row"><span>Bristol distribution</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
+            <div class="row"><span>Symptom timeline</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
+            <div class="row"><span>Trigger correlations</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
+            <div class="row"><span>Daily log table</span><span style="color:var(--sage); font-weight:500;">Included</span></div>
+            <div class="row"><span>Photos</span><span style="color:var(--terra-d); font-weight:500;">Opt-in per entry</span></div>
+          </div>
+        </div>
+
+        <div style="flex:1;"></div>
+        <div class="btn sage" onclick="nav('pdf')">Preview &amp; generate</div>
+      </div>
+    </div>
+  `;
+}
+
+function viewPDF() {
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">Preview</div><div class="sub" style="font-size:11px;">Page 1 of 4</div></div>
+        <div class="back" onclick="window.print()"><svg width="18" height="18"><use href="#ic-share"/></svg></div>
+      </div>
+      <div class="pad" style="padding-top: 14px;">
+        <div class="pdfpage">
+          <h2>Bowel &amp; symptom report</h2>
+          <div class="meta">WJ-${new Date().toISOString().slice(0,10).replace(/-/g,'')} · ${state.exportRange.toUpperCase()} · ${state.logs.length} entries</div>
+          <h4>Bristol distribution</h4>
+          <div class="histo">
+            <i style="height:8%"></i><i style="height:14%"></i><i style="height:20%"></i>
+            <i style="height:36%"></i><i style="height:48%"></i>
+            <i class="warn" style="height:92%"></i><i class="warn" style="height:58%"></i>
+          </div>
+          <div class="meta" style="margin-top:4px;">Types 6–7 represent 58% of stools.</div>
+          <h4>Flagged correlations</h4>
+          <table>
+            <tr><th>Trigger</th><th>Outcome</th><th>n</th><th>Conf</th></tr>
+            <tr><td>Dairy</td><td>Type 6 within 6h</td><td>5/5</td><td>High</td></tr>
+            <tr><td>Restaurant gluten</td><td>Type 7 within 12h</td><td>3/3</td><td>Moderate</td></tr>
+            <tr><td>High stress</td><td>Urgency episode</td><td>3/4</td><td>Moderate</td></tr>
+          </table>
+          <h4>Frequency</h4>
+          <div class="meta" style="font-family:'Fraunces',serif;">Mean 2.4/day · Range 0–6 · 3 nocturnal episodes.</div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top: 14px;">
+          <div class="btn cream" style="flex:1;" onclick="toast('Share sheet would open in v1')">Share</div>
+          <div class="btn sage" style="flex:1;" onclick="window.print()">Save PDF</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function viewInsightDetail() {
+  return `
+    <div class="view">
+      <div class="topbar">
+        <div class="back" onclick="back()"><svg width="20" height="20"><use href="#ic-back"/></svg></div>
+        <div style="flex:1;"><div class="title-sm">Pattern detail</div></div>
+      </div>
+      <div class="pad" style="padding-top: 14px;">
+        <h1 class="title">Dairy →<br/>mushy stool</h1>
+        <p class="sub">Last 14 days · 4 of 4 times</p>
+
+        <div class="card">
+          <div class="label">The 4 entries</div>
+          <div style="display:flex; flex-direction:column; gap: 10px; margin-top:10px;">
+            ${[
+              {when:'Today 9:41', after:'Latte at 8:15', delay:'~1h 26m'},
+              {when:'Tue 22:10', after:'Cheese pizza at 19:00', delay:'~3h 10m'},
+              {when:'Mon 9:30', after:'Yogurt at 7:50', delay:'~1h 40m'},
+              {when:'Sat 18:40', after:'Ice cream at 14:00', delay:'~4h 40m'},
+            ].map(e => `
+              <div style="display:grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: center;">
+                <div style="width:10px; height:10px; border-radius:50%; background: var(--terra);"></div>
+                <div>
+                  <div style="font-weight:500; font-size:14px;">${e.when}</div>
+                  <div class="sub" style="font-size:12px;">${e.after}</div>
+                </div>
+                <div class="sub" style="font-size:11px;">${e.delay}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="card fog">
+          <div class="label">What this might mean</div>
+          <div class="sub" style="margin-top: 8px;">A consistent within-6-hour pattern is worth raising with your GI. It's not a diagnosis — your doctor can suggest a trial elimination or testing if useful.</div>
+        </div>
+
+        <div class="btn cream" onclick="nav('export')">Include this in next report</div>
+      </div>
+    </div>
+  `;
+}
+
+// ============ ACTIONS ============
+function startStoolLog() {
+  state.draftBristol = 3;
+  state.draftUrgency = null;
+  state.draftPain = null;
+  state.draftExtras = [];
+  nav('bristol');
+}
+function chooseBristol(i) {
+  state.draftBristol = i;
+  nav('stool-details', {replace:true});
+}
+function toggleExtra(o) {
+  const i = state.draftExtras.indexOf(o);
+  if (i >= 0) state.draftExtras.splice(i, 1);
+  else state.draftExtras.push(o);
+  render();
+}
+function finishStoolLog() {
+  addLog({
+    type: 'stool',
+    bristol: state.draftBristol,
+    urgency: state.draftUrgency,
+    pain: state.draftPain,
+    extras: state.draftExtras
+  });
+  toast('Logged.');
+  state.history = [];
+  nav('home', {replace:true});
+}
+
+function quickTrigger(kind) {
+  state.draftTrigger = kind;
+  state.draftTriggerTags = [];
+  state.draftTriggerType = 'photo';
+  // Immediately add a draft entry so timestamp is locked
+  addLog({ type: 'trigger', subtype: kind, draft: true });
+  nav('trigger');
+}
+function toggleTriggerTag(t) {
+  const i = state.draftTriggerTags.indexOf(t);
+  if (i >= 0) state.draftTriggerTags.splice(i, 1);
+  else state.draftTriggerTags.push(t);
+  render();
+}
+function finishTrigger(later=false) {
+  // Update the most recent draft trigger
+  const last = [...state.logs].reverse().find(l => l.type === 'trigger' && l.subtype === state.draftTrigger && l.draft);
+  if (last) {
+    last.draft = later;
+    last.tags = state.draftTriggerTags;
+  }
+  toast(later ? 'Saved — finish anytime today' : 'Logged.');
+  state.history = [];
+  nav('home', {replace:true});
+}
+
+// ============ HELPERS ============
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toTimeString().slice(0,5);
+}
+function groupLogsByDay(logs) {
+  const groups = {};
+  logs.slice().reverse().forEach(l => {
+    const d = new Date(l.ts);
+    const key = d.toDateString();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(l);
+  });
+  const today = new Date().toDateString();
+  return Object.entries(groups).map(([k, v]) => {
+    let label;
+    if (k === today) label = 'Today';
+    else {
+      const days = Math.round((Date.now() - new Date(k).getTime()) / 86400000);
+      if (days === 1) label = 'Yesterday';
+      else label = new Date(k).toLocaleDateString(undefined, {weekday: 'long'});
+    }
+    return { label, logs: v };
+  });
+}
+
+// Demo seed: simulate week-3 state
+function seedDemo() {
+  state = {
+    ...state,
+    onboarded: true,
+    startedAt: Date.now() - 20 * 86400000,
+    logs: [],
+  };
+  const now = Date.now();
+  // 14 stool logs + triggers across 7 days, with dairy correlation
+  const seed = [
+    {dayAgo: 6, hour: 9, bristol: 3},
+    {dayAgo: 6, hour: 19, type:'trigger', sub: 'stress'},
+    {dayAgo: 5, hour: 8, type:'trigger', sub: 'ate', tags:['Dairy']},
+    {dayAgo: 5, hour: 11, bristol: 5},
+    {dayAgo: 5, hour: 22, bristol: 4},
+    {dayAgo: 4, hour: 7, type:'trigger', sub: 'ate', tags:['Dairy','Coffee']},
+    {dayAgo: 4, hour: 9, bristol: 5, urgency: 'A bit'},
+    {dayAgo: 3, hour: 8, bristol: 3},
+    {dayAgo: 3, hour: 14, type:'trigger', sub: 'ate', tags:['Gluten']},
+    {dayAgo: 3, hour: 18, bristol: 6},
+    {dayAgo: 2, hour: 9, bristol: 4},
+    {dayAgo: 2, hour: 20, type:'trigger', sub: 'stress'},
+    {dayAgo: 1, hour: 8, type:'trigger', sub: 'ate', tags:['Dairy']},
+    {dayAgo: 1, hour: 9, bristol: 5, urgency: 'A bit', pain: 'Mild'},
+    {dayAgo: 1, hour: 19, bristol: 5},
+    {dayAgo: 0, hour: 8, type:'trigger', sub: 'ate', tags:['Dairy']},
+    {dayAgo: 0, hour: 9, bristol: 5, urgency: 'A bit', pain: 'Moderate', extras:['📷 Add photo']},
+  ];
+  seed.forEach(s => {
+    const ts = now - s.dayAgo * 86400000;
+    const d = new Date(ts); d.setHours(s.hour, 0, 0, 0);
+    if (s.type === 'trigger') {
+      addLog({ type:'trigger', subtype: s.sub, tags: s.tags || [], ts: d.getTime() });
+    } else {
+      addLog({
+        type:'stool', bristol: s.bristol,
+        urgency: s.urgency || null, pain: s.pain || null, extras: s.extras || [],
+        ts: d.getTime()
+      });
+    }
+  });
+  state.view = 'home';
+  state.history = [];
+  render();
+  toast('Demo state loaded — Week 3');
+}
+
+function reset() {
+  state = {
+    onboarded: false, genericName: true, startedAt: Date.now(),
+    logs: [], draftBristol: 3, draftUrgency: null, draftPain: null, draftExtras: [],
+    draftTrigger: null, draftTriggerTags: [], draftTriggerType: 'photo',
+    exportRange: '30d', view: 'onboarding', history: []
+  };
+  render();
+  toast('Reset');
+}
+
+// ============ RENDER ============
+function render() {
+  const v = state.view;
+  let html = '';
+  if (!state.onboarded && v !== 'onboarding') state.view = 'onboarding';
+  switch (state.view) {
+    case 'onboarding': html = viewOnboarding(); break;
+    case 'home': html = viewHome(); break;
+    case 'bristol': html = viewBristol(); break;
+    case 'stool-details': html = viewStoolDetails(); break;
+    case 'trigger': html = viewQuickTrigger(); break;
+    case 'timeline': html = viewTimeline(); break;
+    case 'patterns': html = viewPatterns(); break;
+    case 'you': html = viewYou(); break;
+    case 'export': html = viewExport(); break;
+    case 'pdf': html = viewPDF(); break;
+    case 'insight-detail': html = viewInsightDetail(); break;
+    default: html = viewHome();
+  }
+  document.getElementById('viewport').innerHTML = html;
+}
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === ' ') next();
-  else if (e.key === 'ArrowLeft') prev();
+  if (e.key.toLowerCase() === 'd') seedDemo();
+  if (e.key.toLowerCase() === 'r') reset();
 });
+
 render();
 </script>
 </body>

@@ -14,6 +14,13 @@ interface Article {
 
 const ARTICLES: Article[] = articlesFile.articles;
 
+/**
+ * Flip to `true` only after every URL in src/content/articles.json has been
+ * clicked-through against the live source site and confirmed canonical.
+ * Until then the tile stays hidden in production builds.
+ */
+const ARTICLES_URLS_VERIFIED = false;
+
 /** Day-of-year, 1-366. Deterministic across timezones for a single user. */
 function dayOfYear(d: Date = new Date()): number {
   const start = new Date(d.getFullYear(), 0, 0);
@@ -27,6 +34,7 @@ function dayOfYear(d: Date = new Date()): number {
  * in MVP. Those land post-MVP only if usage shows the tile is tapped.
  */
 export function ContentTile() {
+  if (!ARTICLES_URLS_VERIFIED) return null;
   if (ARTICLES.length === 0) return null;
   const article = ARTICLES[dayOfYear() % ARTICLES.length];
 

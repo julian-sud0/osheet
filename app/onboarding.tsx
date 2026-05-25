@@ -1,31 +1,53 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radii, spacing, type } from '@/theme/tokens';
+import { StyleSheet, Text, View } from 'react-native';
+import { Button, Card, Switch } from '@/components/ui';
+import { WeatherScene } from '@/components/WeatherScene';
+import { useAppStore } from '@/data/store';
+import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function Onboarding() {
+  const genericName = useAppStore((s) => s.genericName);
+  const setGenericName = useAppStore((s) => s.setGenericName);
+  const setOnboarded = useAppStore((s) => s.setOnboarded);
+
   return (
     <View style={styles.root}>
-      <View style={styles.heroIllustration} />
+      <View style={styles.hero}>
+        <WeatherScene state="calm" />
+      </View>
 
-      <View style={styles.headline}>
-        <Text style={type.title}>A quiet place{'\n'}for your gut.</Text>
-        <Text style={[type.sub, { marginTop: 10 }]}>
+      <View>
+        <Text style={tokenType.title}>A quiet place{'\n'}for your gut.</Text>
+        <Text style={[tokenType.sub, { marginTop: 10 }]}>
           Track how today felt, find what helps, and walk into your next appointment ready.
         </Text>
       </View>
 
+      <Card tone="fog" style={{ padding: spacing.md }}>
+        <View style={styles.row}>
+          <View style={{ flex: 1, paddingRight: spacing.md }}>
+            <Text style={{ fontWeight: '600', fontSize: 14, color: colors.cocoa }}>
+              Show as &ldquo;Wellness Journal&rdquo;
+            </Text>
+            <Text style={[tokenType.sub, { fontSize: 12, marginTop: 2 }]}>
+              Generic name &amp; icon on your home screen.
+            </Text>
+          </View>
+          <Switch value={genericName} onChange={setGenericName} />
+        </View>
+      </Card>
+
       <View style={{ flex: 1 }} />
 
-      <Pressable
-        style={styles.cta}
-        onPress={() => router.replace('/(tabs)')}
-        accessibilityRole="button"
-        accessibilityLabel="Begin"
-      >
-        <Text style={styles.ctaText}>Begin</Text>
-      </Pressable>
-
-      <Text style={[type.sub, { textAlign: 'center', fontSize: 12, paddingBottom: 18 }]}>
+      <Button
+        label="Begin"
+        variant="sage"
+        onPress={() => {
+          setOnboarded(true);
+          router.replace('/(tabs)');
+        }}
+      />
+      <Text style={[tokenType.sub, { textAlign: 'center', fontSize: 12, paddingBottom: 18 }]}>
         Your data lives on this phone. No account needed.
       </Text>
     </View>
@@ -40,23 +62,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     gap: 22,
   },
-  heroIllustration: {
+  hero: {
     height: 170,
     borderRadius: radii.lg,
-    backgroundColor: colors.sageLight,
+    overflow: 'hidden',
   },
-  headline: {
-    gap: spacing.sm,
-  },
-  cta: {
-    backgroundColor: colors.sage,
-    borderRadius: radii.pill,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  ctaText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

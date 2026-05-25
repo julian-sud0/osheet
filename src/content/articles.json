@@ -1,0 +1,70 @@
+{
+  "__schema": "{ id, title, source, blurb, url, tags[] }",
+  "__note": "URLs are PLACEHOLDERS. Before shipping, replace each `url` with the verified canonical link from the source's own site. Do not link to AMP / aggregator versions.",
+  "articles": [
+    {
+      "id": "mayo-ibs-overview",
+      "title": "Irritable Bowel Syndrome — symptoms & causes",
+      "source": "Mayo Clinic",
+      "blurb": "A plain-language overview of IBS subtypes and how doctors approach a diagnosis.",
+      "url": "https://www.mayoclinic.org/diseases-conditions/irritable-bowel-syndrome/symptoms-causes",
+      "tags": ["ibs", "overview"]
+    },
+    {
+      "id": "cleveland-bristol-scale",
+      "title": "Bristol Stool Chart: what your stool says",
+      "source": "Cleveland Clinic",
+      "blurb": "Why clinicians use the Bristol scale and what each type tends to signal.",
+      "url": "https://my.clevelandclinic.org/health/articles/14048-bristol-stool-scale",
+      "tags": ["bristol", "self-knowledge"]
+    },
+    {
+      "id": "niddk-ibd-basics",
+      "title": "Inflammatory Bowel Disease basics",
+      "source": "NIDDK (NIH)",
+      "blurb": "The difference between Crohn's, ulcerative colitis, and IBS — and when to escalate.",
+      "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/inflammatory-bowel-disease",
+      "tags": ["ibd", "overview"]
+    },
+    {
+      "id": "harvard-gut-brain",
+      "title": "The gut-brain connection",
+      "source": "Harvard Health",
+      "blurb": "How stress, mood, and the gut interact — and why your symptoms can spike on hard weeks.",
+      "url": "https://www.health.harvard.edu/diseases-and-conditions/the-gut-brain-connection",
+      "tags": ["stress", "gut-brain"]
+    },
+    {
+      "id": "mayo-fodmap",
+      "title": "FODMAP diet basics",
+      "source": "Mayo Clinic",
+      "blurb": "What a low-FODMAP trial actually looks like, and what it can and can't tell you.",
+      "url": "https://www.mayoclinic.org/diseases-conditions/irritable-bowel-syndrome/expert-answers/fodmap-diet",
+      "tags": ["diet", "ibs"]
+    },
+    {
+      "id": "cleveland-when-to-see-doctor",
+      "title": "When to see a doctor about a change in bowel habits",
+      "source": "Cleveland Clinic",
+      "blurb": "Red-flag symptoms worth raising — bleeding, weight loss, persistent night-time pain.",
+      "url": "https://health.clevelandclinic.org/changes-in-bowel-habits",
+      "tags": ["safety", "when-to-escalate"]
+    },
+    {
+      "id": "niddk-fiber",
+      "title": "Eating, diet, and nutrition for IBS",
+      "source": "NIDDK (NIH)",
+      "blurb": "How fiber type, hydration, and meal timing actually affect symptoms — without the hype.",
+      "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/irritable-bowel-syndrome/eating-diet-nutrition",
+      "tags": ["diet", "ibs"]
+    },
+    {
+      "id": "harvard-microbiome",
+      "title": "Your gut microbiome — what we know (and don't)",
+      "source": "Harvard Health",
+      "blurb": "An honest read on what current science can say about probiotics, diversity, and outcomes.",
+      "url": "https://www.health.harvard.edu/blog/the-gut-microbiome",
+      "tags": ["microbiome", "research"]
+    }
+  ]
+}

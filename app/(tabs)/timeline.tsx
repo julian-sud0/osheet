@@ -1,62 +1,95 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RowActionsSheet } from '@/components/RowActionsSheet';
 import { Pill, Seg } from '@/components/ui';
 import { useAppStore } from '@/data/store';
+import type { Log, StoolLog, TriggerLog } from '@/data/types';
 import { bristolByType, TRIGGER_TYPES } from '@/domain/bristol';
 import { formatTime, groupLogsByDay } from '@/domain/time';
-import type { Log, StoolLog, TriggerLog } from '@/data/types';
 import { colors, radii, shadows, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function Timeline() {
   const logs = useAppStore((s) => s.logs);
+  const deleteLog = useAppStore((s) => s.deleteLog);
   const grouped = groupLogsByDay(logs);
+  const [actionTarget, setActionTarget] = useState<Log | null>(null);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={styles.scroll}>
-      <View style={styles.headerRow}>
-        <Text style={tokenType.title}>Timeline</Text>
-        <Pill label="Recent" />
-      </View>
-
-      <Seg
-        value="day"
-        onChange={(v) => {
-          if (v === 'pattern') router.replace('/(tabs)/patterns');
-        }}
-        options={[
-          { value: 'day', label: 'By day' },
-          { value: 'pattern', label: 'By pattern' },
-        ]}
-      />
-
-      {grouped.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={[tokenType.sub, { textAlign: 'center', fontStyle: 'italic' }]}>
-            No entries yet. Tap + on Today to log your first.
-          </Text>
+    <View style={{ flex: 1, backgroundColor: colors.cream }}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.headerRow}>
+          <Text style={tokenType.title}>Timeline</Text>
+          <Pill label="Recent" />
         </View>
-      ) : (
-        grouped.map((g) => (
-          <View key={g.label} style={{ gap: spacing.sm }}>
-            <Text style={styles.dayLabel}>{g.label}</Text>
-            {g.logs.map((l) => (
-              <Row key={l.id} log={l} />
-            ))}
+
+        <Seg
+          value="day"
+          onChange={(v) => {
+            if (v === 'pattern') router.replace('/(tabs)/patterns');
+          }}
+          options={[
+            { value: 'day', label: 'By day' },
+            { value: 'pattern', label: 'By pattern' },
+          ]}
+        />
+
+        {grouped.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={[tokenType.sub, { textAlign: 'center', fontStyle: 'italic' }]}>
+              No entries yet. Tap + on Today to log your first.
+            </Text>
           </View>
-        ))
-      )}
-    </ScrollView>
+        ) : (
+          grouped.map((g) => (
+            <View key={g.label} style={{ gap: spacing.sm }}>
+              <Text style={styles.dayLabel}>{g.label}</Text>
+              {g.logs.map((l) => (
+                <Row key={l.id} log={l} onLongPress={() => setActionTarget(l)} />
+              ))}
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      <RowActionsSheet
+        visible={actionTarget !== null}
+        title={actionTarget ? describeLog(actionTarget) : ''}
+        onDelete={
+          actionTarget
+            ? () => {
+                void deleteLog(actionTarget.id);
+              }
+            : undefined
+        }
+        onClose={() => setActionTarget(null)}
+      />
+    </View>
   );
 }
 
-function Row({ log }: { log: Log }) {
+function describeLog(log: Log): string {
   if (log.type === 'stool') {
-    return <StoolRow log={log} />;
+    return `${bristolByType(log.bristol).name} · ${formatTime(log.ts)}`;
   }
-  return <TriggerRow log={log} />;
+  return `${TRIGGER_TYPES[log.subtype].label} · ${formatTime(log.ts)}`;
 }
 
-function StoolRow({ log }: { log: StoolLog }) {
+function Row({ log, onLongPress }: { log: Log; onLongPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={describeLog(log)}
+      onLongPress={onLongPress}
+      delayLongPress={400}
+      style={({ pressed }) => [styles.row, pressed && { opacity: 0.92 }]}
+    >
+      {log.type === 'stool' ? <StoolRowContent log={log} /> : <TriggerRowContent log={log} />}
+    </Pressable>
+  );
+}
+
+function StoolRowContent({ log }: { log: StoolLog }) {
   const b = bristolByType(log.bristol);
   const color = b.color === 'sage' ? colors.sage : b.color === 'terra' ? colors.terra : colors.blue;
   const extras: string[] = [];
@@ -65,18 +98,18 @@ function StoolRow({ log }: { log: StoolLog }) {
   if (log.extras.includes('Blood')) extras.push('blood');
   if (log.extras.includes('Mucus')) extras.push('mucus');
   return (
-    <View style={styles.row}>
+    <>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <View style={{ flex: 1 }}>
         <Text style={styles.rowTitle}>{b.name}</Text>
         <Text style={styles.rowMeta}>{extras.length > 0 ? extras.join(' · ') : 'No notes'}</Text>
       </View>
       <Text style={styles.rowTime}>{formatTime(log.ts)}</Text>
-    </View>
+    </>
   );
 }
 
-function TriggerRow({ log }: { log: TriggerLog }) {
+function TriggerRowContent({ log }: { log: TriggerLog }) {
   const t = TRIGGER_TYPES[log.subtype];
   const meta =
     log.tags.length > 0
@@ -87,7 +120,7 @@ function TriggerRow({ log }: { log: TriggerLog }) {
       ? 'finish later'
       : 'logged';
   return (
-    <View style={styles.row}>
+    <>
       <View style={[styles.dot, { backgroundColor: colors.blueLight, alignItems: 'center', justifyContent: 'center' }]}>
         <Text style={{ fontSize: 11 }}>{t.icon}</Text>
       </View>
@@ -96,7 +129,7 @@ function TriggerRow({ log }: { log: TriggerLog }) {
         <Text style={styles.rowMeta}>{meta}</Text>
       </View>
       <Text style={styles.rowTime}>{formatTime(log.ts)}</Text>
-    </View>
+    </>
   );
 }
 

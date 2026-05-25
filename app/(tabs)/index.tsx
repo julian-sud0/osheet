@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, Chip, Chips, Label, Pill } from '@/components/ui';
+import { ContentTile } from '@/components/ContentTile';
 import { WeatherScene } from '@/components/WeatherScene';
 import { useAppStore } from '@/data/store';
 import { TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
@@ -85,6 +86,8 @@ export default function Today() {
         ) : (
           <ProgressContract have={totalLogs} need={need} />
         )}
+
+        <ContentTile />
       </ScrollView>
 
       <Pressable

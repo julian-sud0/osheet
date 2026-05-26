@@ -1,7 +1,9 @@
+import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Label, Switch } from '@/components/ui';
+import articlesFile from '@/content/articles.json';
 import { loadDemoData } from '@/data/seed';
 import { useAppStore, type UserMode } from '@/data/store';
 import { colors, radii, shadows, spacing, type as tokenType } from '@/theme/tokens';
@@ -69,6 +71,29 @@ export default function You() {
             <Text style={[tokenType.sub, { fontSize: 11, marginTop: spacing.md }]}>Demo tools (dev only)</Text>
             <Button label="Load Week-3 demo data" variant="cream" onPress={() => loadDemoData()} />
             <Button label="Clear all logs" variant="ghost" onPress={() => clearLogs()} />
+
+            <Card tone="fog">
+              <Label>Verify article URLs</Label>
+              <Text style={[tokenType.sub, { fontSize: 12, marginTop: 6 }]}>
+                Tap each to open the source page. Any that 404 or redirect to a homepage should be
+                updated in <Text style={{ fontFamily: 'monospace' }}>src/content/articles.json</Text>.
+              </Text>
+              <View style={{ gap: 6, marginTop: 10 }}>
+                {articlesFile.articles.map((a: { id: string; title: string; source: string; url: string }) => (
+                  <Pressable
+                    key={a.id}
+                    onPress={() => {
+                      void WebBrowser.openBrowserAsync(a.url);
+                    }}
+                    accessibilityRole="link"
+                    style={({ pressed }) => [verifyStyles.row, pressed && { opacity: 0.7 }]}
+                  >
+                    <Text style={verifyStyles.title}>{a.title}</Text>
+                    <Text style={verifyStyles.source}>{a.source}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </Card>
           </View>
         ) : null}
       </ScrollView>
@@ -153,6 +178,17 @@ function ModePickerSheet({
     </Modal>
   );
 }
+
+const verifyStyles = StyleSheet.create({
+  row: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    borderRadius: radii.md,
+  },
+  title: { fontSize: 13, fontWeight: '600', color: colors.cocoa },
+  source: { fontSize: 11, color: colors.cocoa2, marginTop: 2 },
+});
 
 const pickerStyles = StyleSheet.create({
   backdrop: {

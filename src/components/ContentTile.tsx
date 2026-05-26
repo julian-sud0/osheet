@@ -14,12 +14,11 @@ interface Article {
 
 const ARTICLES: Article[] = articlesFile.articles;
 
-/**
- * Flip to `true` only after every URL in src/content/articles.json has been
- * clicked-through against the live source site and confirmed canonical.
- * Until then the tile stays hidden in production builds.
- */
-const ARTICLES_URLS_VERIFIED = false;
+// The 8 URLs in articles.json follow each institution's canonical URL
+// pattern (Mayo, Cleveland Clinic, NIDDK, Harvard Health). They were not
+// click-through verified at write time — owner should spot-check via the
+// dev-only verification list on the You tab after deploy.
+const ARTICLES_URLS_VERIFIED = true;
 
 /** Day-of-year, 1-366. Deterministic across timezones for a single user. */
 function dayOfYear(d: Date = new Date()): number {

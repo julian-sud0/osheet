@@ -12,12 +12,13 @@ export default function Onboarding() {
       </View>
 
       <View style={styles.headline}>
-        <Text style={tokenType.title}>
-          Most days this is{'\n'}invisible work.{'\n'}Here, it counts.
+        <Text style={tokenType.title}>Welcome to O.</Text>
+        <Text style={[tokenType.sub, { marginTop: 12, fontSize: 15, color: colors.cocoa }]}>
+          The quiet sidekick for understanding IBS, IBD, and a sensitive gut.
         </Text>
         <Text style={[tokenType.sub, { marginTop: 14 }]}>
-          A quiet place to notice patterns, side by side. We watch the data so you can live the
-          days.
+          Track how today felt. Notice the patterns that matter. Walk into your next appointment
+          knowing exactly what to share.
         </Text>
       </View>
 

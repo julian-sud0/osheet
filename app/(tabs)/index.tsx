@@ -103,15 +103,6 @@ export default function Today() {
 
         <ContentTile />
       </ScrollView>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Log a stool"
-        onPress={() => router.push('/log/bristol')}
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-      >
-        <Text style={styles.fabPlus}>＋</Text>
-      </Pressable>
     </View>
   );
 }
@@ -189,18 +180,4 @@ const styles = StyleSheet.create({
 
   bar: { height: 6, backgroundColor: colors.fog, borderRadius: radii.pill, overflow: 'hidden', marginTop: 10 },
   barFill: { height: '100%', backgroundColor: colors.sage, borderRadius: radii.pill },
-
-  fab: {
-    position: 'absolute',
-    right: 22,
-    bottom: 96,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.cocoa,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.fab,
-  },
-  fabPlus: { color: colors.cream, fontSize: 28, lineHeight: 30 },
 });

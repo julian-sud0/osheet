@@ -36,7 +36,10 @@ interface Props {
  */
 export function BristolStack({ initial = 4, onChoose }: Props) {
   const [containerWidth, setContainerWidth] = useState(() => Dimensions.get('window').width);
-  const itemWidth = Math.min(containerWidth, 360);
+  // Each FlatList page is the full container width so pagingEnabled's
+  // snap interval (= viewport width) and the item edge agree. The visible
+  // card is a fixed 260px width centred inside the page via itemSlot.
+  const itemWidth = containerWidth;
   const listRef = useRef<FlatList<BristolEntry>>(null);
   const [index, setIndex] = useState<number>(initial - 1);
   const scrollX = useSharedValue(0);

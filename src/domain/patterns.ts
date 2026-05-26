@@ -1,4 +1,21 @@
 import type { Log, StoolLog, TriggerLog } from '@/data/types';
+import type { UserMode } from '@/data/store';
+
+interface Thresholds {
+  strongestMinN: number;
+  strongestMinRatio: number;
+  watchingMinN: number;
+  watchingMinRatio: number;
+}
+
+const THRESHOLDS: Record<UserMode, Thresholds> = {
+  // Default: pre-conclusion, evidence-y
+  exploring: { strongestMinN: 4, strongestMinRatio: 0.75, watchingMinN: 2, watchingMinRatio: 0.5 },
+  // Appointment: surface early signals to bring to the doctor
+  appointment: { strongestMinN: 3, strongestMinRatio: 0.7, watchingMinN: 2, watchingMinRatio: 0.5 },
+  // Recently diagnosed: don't over-claim, but allow loose patterns to surface as "watching"
+  diagnosed: { strongestMinN: 3, strongestMinRatio: 0.65, watchingMinN: 2, watchingMinRatio: 0.5 },
+};
 
 /**
  * Correlation engine. Replaces the prototype's hardcoded
@@ -138,7 +155,8 @@ function stressCorrelation(logs: Log[]): Correlation | null {
   };
 }
 
-export function patterns(logs: Log[]): PatternsOutput {
+export function patterns(logs: Log[], mode: UserMode = 'exploring'): PatternsOutput {
+  const t = THRESHOLDS[mode];
   const candidates: Correlation[] = [
     ...tagCorrelations(logs),
     ...(stressCorrelation(logs) ? [stressCorrelation(logs)!] : []),
@@ -150,9 +168,9 @@ export function patterns(logs: Log[]): PatternsOutput {
     return b.hits / b.n - a.hits / a.n;
   });
 
-  const strongest = candidates.find((c) => c.n >= 3 && c.hits / c.n >= 0.75);
+  const strongest = candidates.find((c) => c.n >= t.strongestMinN && c.hits / c.n >= t.strongestMinRatio);
   const watching = candidates.find(
-    (c) => c !== strongest && c.n >= 2 && c.hits / c.n >= 0.5,
+    (c) => c !== strongest && c.n >= t.watchingMinN && c.hits / c.n >= t.watchingMinRatio,
   );
 
   return {
@@ -162,8 +180,8 @@ export function patterns(logs: Log[]): PatternsOutput {
   };
 }
 
-export function findCorrelationById(logs: Log[], id: string): Correlation | undefined {
-  const { strongest, watching } = patterns(logs);
+export function findCorrelationById(logs: Log[], id: string, mode: UserMode = 'exploring'): Correlation | undefined {
+  const { strongest, watching } = patterns(logs, mode);
   if (strongest?.id === id) return strongest;
   if (watching?.id === id) return watching;
   // Allow direct lookup even when not surfaced as strongest/watching.

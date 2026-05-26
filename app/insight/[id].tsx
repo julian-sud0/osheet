@@ -9,7 +9,11 @@ import { colors, spacing, type as tokenType } from '@/theme/tokens';
 export default function InsightDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const logs = useAppStore((s) => s.logs);
-  const correlation = useMemo(() => (id ? findCorrelationById(logs, id) : undefined), [logs, id]);
+  const userMode = useAppStore((s) => s.userMode);
+  const correlation = useMemo(
+    () => (id ? findCorrelationById(logs, id, userMode) : undefined),
+    [logs, id, userMode],
+  );
 
   if (!correlation) {
     return (

@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, Seg, TopBar } from '@/components/ui';
+import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
 import { COMMON_FOOD_TAGS, TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
@@ -15,6 +16,7 @@ export default function TriggerScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [detailMode, setDetailMode] = useState<'photo' | 'words'>('photo');
   const [note, setNote] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
 
   // Lock the timestamp the moment the screen mounts — even if the user never
@@ -44,10 +46,20 @@ export default function TriggerScreen() {
     setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
   };
 
+  const addPhoto = async () => {
+    const uri = await capturePhoto();
+    if (uri) setPhotoUri(uri);
+  };
+
   const finish = async (later: boolean) => {
     const id = draftIdRef.current;
     if (id) {
-      await updateLog(id, { tags, note: note.trim() || undefined, draft: later });
+      await updateLog(id, {
+        tags,
+        note: note.trim() || undefined,
+        photoUri: photoUri ?? undefined,
+        draft: later,
+      });
     }
     router.replace('/(tabs)');
   };
@@ -67,6 +79,8 @@ export default function TriggerScreen() {
               onChangeMode={setDetailMode}
               note={note}
               onChangeNote={setNote}
+              photoUri={photoUri}
+              onAddPhoto={addPhoto}
             />
           ) : (
             <GenericNote note={note} onChangeNote={setNote} />
@@ -88,6 +102,8 @@ function AteDetails({
   onChangeMode,
   note,
   onChangeNote,
+  photoUri,
+  onAddPhoto,
 }: {
   tags: string[];
   onToggleTag: (t: string) => void;
@@ -95,6 +111,8 @@ function AteDetails({
   onChangeMode: (m: 'photo' | 'words') => void;
   note: string;
   onChangeNote: (s: string) => void;
+  photoUri: string | null;
+  onAddPhoto: () => void;
 }) {
   return (
     <View style={{ gap: spacing.md }}>
@@ -107,9 +125,27 @@ function AteDetails({
         ]}
       />
       {detailMode === 'photo' ? (
-        <View style={styles.photoDrop}>
-          <Text style={[tokenType.sub, { fontSize: 13 }]}>Tap to add a meal photo</Text>
-        </View>
+        photoUri ? (
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            <Image source={{ uri: photoUri }} style={styles.thumb} />
+            <Pressable
+              onPress={onAddPhoto}
+              accessibilityRole="button"
+              style={({ pressed }) => [{ paddingVertical: 6 }, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.sageDark }}>Retake</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onAddPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Add a meal photo"
+            style={({ pressed }) => [styles.photoDrop, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={[tokenType.sub, { fontSize: 13 }]}>📷 Tap to take or choose a meal photo</Text>
+          </Pressable>
+        )
       ) : (
         <TextInput
           value={note}
@@ -155,6 +191,7 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 60 },
   pad: { paddingHorizontal: spacing.lg, paddingTop: 14, gap: spacing.md },
 
+  thumb: { width: 100, height: 100, borderRadius: radii.lg, backgroundColor: colors.fog },
   photoDrop: {
     height: 130,
     borderRadius: radii.lg,

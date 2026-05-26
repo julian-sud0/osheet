@@ -12,10 +12,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const onboarded = useAppStore((s) => s.onboarded);
 
   useEffect(() => {
-    const inOnboarding = segments[0] === 'onboarding';
-    if (!onboarded && !inOnboarding) {
+    const seg = segments[0];
+    const inOnboardingFlow = seg === 'onboarding' || seg === 'onboarding-mode';
+    if (!onboarded && !inOnboardingFlow) {
       router.replace('/onboarding');
-    } else if (onboarded && inOnboarding) {
+    } else if (onboarded && inOnboardingFlow) {
       router.replace('/(tabs)');
     }
   }, [onboarded, segments, router]);

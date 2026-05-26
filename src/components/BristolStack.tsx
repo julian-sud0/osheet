@@ -1,19 +1,18 @@
-import { useCallback, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useCallback, useRef, useState } from 'react';
+import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  runOnJS,
+  interpolate,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
+  Extrapolation,
 } from 'react-native-reanimated';
 import { BristolGlyph } from './bristolSvg';
-import { BRISTOL } from '@/domain/bristol';
+import { BRISTOL, type BristolEntry } from '@/domain/bristol';
 import type { BristolType } from '@/data/types';
 import { colors, radii, shadows, type as tokenType } from '@/theme/tokens';
 
-const SWIPE_THRESHOLD = 50;
-const CARD_WIDTH = 260;
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList<BristolEntry>);
 
 interface Props {
   initial?: BristolType;
@@ -21,65 +20,79 @@ interface Props {
 }
 
 /**
- * Swipeable Bristol picker. Closes gap #1 — replaces the prototype's "swipe"
- * affordance that was never wired (index.html:434-462 had no touch handler).
+ * Swipeable Bristol picker on horizontal FlatList + pagingEnabled.
  *
- * Pan gesture moves between cards; tapping the centre card confirms the choice.
- * Prev / Next buttons remain as a keyboard / no-touch fallback in the parent.
+ * Why this shape instead of Pan + reanimated worklets:
+ *   - On RN Web, reanimated runs on the JS thread (no UI thread), so Pan-driven
+ *     drag-with-finger feels stuttery
+ *   - The browser owns horizontal scroll inertia natively; we get smooth 60fps
+ *     drag-and-snap for free
+ *   - touchAction: 'pan-x' on the container tells iOS Safari "we own
+ *     horizontal", which prevents the edge-swipe back-navigation gesture from
+ *     fighting our drag
+ *
+ * Each item is full container-width and snaps via pagingEnabled. Card scale +
+ * opacity interpolate from the live scrollX so we keep the "stack" aesthetic.
  */
 export function BristolStack({ initial = 4, onChoose }: Props) {
+  const [containerWidth, setContainerWidth] = useState(() => Dimensions.get('window').width);
+  const itemWidth = Math.min(containerWidth, 360);
+  const listRef = useRef<FlatList<BristolEntry>>(null);
   const [index, setIndex] = useState<number>(initial - 1);
+  const scrollX = useSharedValue(0);
 
-  const setIndexClamped = useCallback((i: number) => {
-    const clamped = Math.max(0, Math.min(6, i));
-    setIndex(clamped);
-  }, []);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollX.value = e.contentOffset.x;
+    },
+  });
 
-  const dragX = useSharedValue(0);
-
-  const pan = Gesture.Pan()
-    .activeOffsetX([-10, 10])
-    .onUpdate((e) => {
-      dragX.value = e.translationX;
-    })
-    .onEnd((e) => {
-      const delta = e.translationX;
-      dragX.value = withTiming(0, { duration: 180 });
-      if (delta < -SWIPE_THRESHOLD) {
-        runOnJS(setIndexClamped)(index + 1);
-      } else if (delta > SWIPE_THRESHOLD) {
-        runOnJS(setIndexClamped)(index - 1);
-      }
-    });
+  const scrollTo = useCallback(
+    (i: number) => {
+      const clamped = Math.max(0, Math.min(6, i));
+      listRef.current?.scrollToOffset({ offset: clamped * itemWidth, animated: true });
+      setIndex(clamped);
+    },
+    [itemWidth],
+  );
 
   return (
-    <View>
-      <GestureDetector gesture={pan}>
-        <View style={styles.stack}>
-          {BRISTOL.map((b, i) => {
-            const offset = i - index;
-            return (
-              <BristolCard
-                key={b.n}
-                offset={offset}
-                dragX={dragX}
-                onPress={() => {
-                  if (offset === 0) onChoose(b.n);
-                  else setIndexClamped(i);
-                }}
-              >
-                <Text style={styles.cardNum}>Type {b.n}</Text>
-                <BristolGlyph type={b.n} />
-                <View>
-                  <Text style={styles.cardName}>{b.name}</Text>
-                  <Text style={styles.cardDesc}>{b.desc}</Text>
-                  {offset === 0 ? <Text style={styles.cardHint}>Tap to choose →</Text> : null}
-                </View>
-              </BristolCard>
-            );
-          })}
-        </View>
-      </GestureDetector>
+    <View
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+      // Web hint to claim horizontal panning from the browser. RN Web passes
+      // unknown style props through to the DOM.
+      style={[styles.container, { touchAction: 'pan-x' } as object]}
+    >
+      <AnimatedFlatList
+        ref={listRef as never}
+        data={BRISTOL}
+        keyExtractor={(b) => String(b.n)}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        snapToInterval={itemWidth}
+        decelerationRate="fast"
+        initialScrollIndex={initial - 1}
+        getItemLayout={(_, i) => ({ length: itemWidth, offset: itemWidth * i, index: i })}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={(e) => {
+          const newIndex = Math.round(e.nativeEvent.contentOffset.x / itemWidth);
+          setIndex(Math.max(0, Math.min(6, newIndex)));
+        }}
+        renderItem={({ item, index: i }) => (
+          <BristolCard
+            entry={item}
+            index={i}
+            scrollX={scrollX}
+            itemWidth={itemWidth}
+            onPress={() => {
+              if (i === index) onChoose(item.n);
+              else scrollTo(i);
+            }}
+          />
+        )}
+      />
 
       <View style={styles.dots}>
         {BRISTOL.map((_, i) => (
@@ -89,7 +102,7 @@ export function BristolStack({ initial = 4, onChoose }: Props) {
 
       <View style={styles.controlsRow}>
         <Pressable
-          onPress={() => setIndexClamped(index - 1)}
+          onPress={() => scrollTo(index - 1)}
           accessibilityRole="button"
           accessibilityLabel="Previous Bristol type"
           style={({ pressed }) => [styles.controlBtn, pressed && { opacity: 0.85 }]}
@@ -97,7 +110,7 @@ export function BristolStack({ initial = 4, onChoose }: Props) {
           <Text style={styles.controlText}>← Prev</Text>
         </Pressable>
         <Pressable
-          onPress={() => setIndexClamped(index + 1)}
+          onPress={() => scrollTo(index + 1)}
           accessibilityRole="button"
           accessibilityLabel="Next Bristol type"
           style={({ pressed }) => [styles.controlBtn, pressed && { opacity: 0.85 }]}
@@ -120,72 +133,49 @@ export function BristolStack({ initial = 4, onChoose }: Props) {
 }
 
 function BristolCard({
-  offset,
-  dragX,
+  entry,
+  index,
+  scrollX,
+  itemWidth,
   onPress,
-  children,
 }: {
-  offset: number;
-  dragX: Animated.SharedValue<number>;
+  entry: BristolEntry;
+  index: number;
+  scrollX: Animated.SharedValue<number>;
+  itemWidth: number;
   onPress: () => void;
-  children: React.ReactNode;
 }) {
   const animatedStyle = useAnimatedStyle(() => {
-    // Base layout per offset, plus the live drag offset on the centre stack.
-    const drag = dragX.value;
-    let baseX: number, scale: number, opacity: number, zIndex: number;
-    if (offset === 0) {
-      baseX = 0;
-      scale = 1;
-      opacity = 1;
-      zIndex = 10;
-    } else if (offset === 1) {
-      baseX = 80;
-      scale = 0.92;
-      opacity = 0.5;
-      zIndex = 9;
-    } else if (offset === -1) {
-      baseX = -80;
-      scale = 0.92;
-      opacity = 0.5;
-      zIndex = 9;
-    } else if (offset === 2) {
-      baseX = 140;
-      scale = 0.85;
-      opacity = 0.25;
-      zIndex = 8;
-    } else if (offset === -2) {
-      baseX = -140;
-      scale = 0.85;
-      opacity = 0.25;
-      zIndex = 8;
-    } else {
-      baseX = offset > 0 ? 220 : -220;
-      scale = 0.8;
-      opacity = 0;
-      zIndex = 0;
-    }
-    return {
-      transform: [{ translateX: baseX + drag * 0.4 }, { scale }],
-      opacity,
-      zIndex,
-    };
+    // Position of this card's centre relative to the current viewport centre,
+    // expressed in "pages" (-1 = one card to the left of current).
+    const offset = scrollX.value / itemWidth - index;
+    const distance = Math.abs(offset);
+    const scale = interpolate(distance, [0, 1, 2], [1, 0.86, 0.78], Extrapolation.CLAMP);
+    const opacity = interpolate(distance, [0, 1, 2], [1, 0.5, 0.2], Extrapolation.CLAMP);
+    return { transform: [{ scale }], opacity };
   });
 
   return (
-    <Animated.View style={[styles.card, animatedStyle]}>
-      <Pressable onPress={onPress} accessibilityRole="button" style={styles.cardInner}>
-        {children}
-      </Pressable>
-    </Animated.View>
+    <View style={[styles.itemSlot, { width: itemWidth }]}>
+      <Animated.View style={[styles.card, animatedStyle]}>
+        <Pressable onPress={onPress} accessibilityRole="button" style={styles.cardInner}>
+          <Text style={styles.cardNum}>Type {entry.n}</Text>
+          <BristolGlyph type={entry.n} />
+          <View>
+            <Text style={styles.cardName}>{entry.name}</Text>
+            <Text style={styles.cardDesc}>{entry.desc}</Text>
+          </View>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: { height: 380, alignItems: 'center', justifyContent: 'flex-start' },
+  container: { width: '100%' },
+  itemSlot: { alignItems: 'center', justifyContent: 'center', paddingVertical: 16 },
   card: {
-    position: 'absolute',
-    width: CARD_WIDTH,
+    width: 260,
     height: 360,
     borderRadius: 28,
     backgroundColor: '#fff',
@@ -202,7 +192,6 @@ const styles = StyleSheet.create({
   },
   cardName: { fontFamily: tokenType.section.fontFamily, fontSize: 24, textAlign: 'center', color: colors.cocoa },
   cardDesc: { fontSize: 12, color: colors.cocoa2, textAlign: 'center', marginTop: 4 },
-  cardHint: { fontSize: 11, color: colors.sageDark, marginTop: 8, fontWeight: '600', textAlign: 'center' },
 
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, paddingTop: 8 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(61,51,43,0.2)' },

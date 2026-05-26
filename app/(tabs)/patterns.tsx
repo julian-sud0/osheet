@@ -7,8 +7,10 @@ import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function PatternsScreen() {
   const logs = useAppStore((s) => s.logs);
-  const ready = logs.length >= 5;
-  const result = ready ? patterns(logs) : null;
+  const userMode = useAppStore((s) => s.userMode);
+  const need = userMode === 'appointment' ? 3 : 5;
+  const ready = logs.length >= need;
+  const result = ready ? patterns(logs, userMode) : null;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={styles.scroll}>
@@ -29,7 +31,7 @@ export default function PatternsScreen() {
       />
 
       {!ready || !result ? (
-        <EmptyState count={logs.length} />
+        <EmptyState count={logs.length} need={need} />
       ) : (
         <>
           {result.strongest ? <CorrelationCard correlation={result.strongest} headline="Strongest link" /> : null}
@@ -77,19 +79,21 @@ function CorrelationCard({
   );
 }
 
-function EmptyState({ count, hint }: { count: number; hint?: string }) {
+function EmptyState({ count, hint, need = 5 }: { count: number; hint?: string; need?: number }) {
   return (
     <View style={styles.empty}>
       <Text style={{ fontFamily: tokenType.section.fontFamily, fontSize: 20, color: colors.cocoa, textAlign: 'center' }}>
-        {hint ?? 'Not enough data yet.'}
+        {hint ?? 'Still finding your patterns.'}
       </Text>
       <Text style={[tokenType.sub, { marginTop: 10, textAlign: 'center' }]}>
-        Patterns appear after about 5 logs across a few days.
+        Patterns appear after about {need} logs across a few days.
       </Text>
       <View style={[styles.bar, { marginTop: 16 }]}>
-        <View style={[styles.barFill, { width: `${Math.min(100, count * 20)}%` }]} />
+        <View style={[styles.barFill, { width: `${Math.min(100, (count / need) * 100)}%` }]} />
       </View>
-      <Text style={[tokenType.sub, { fontSize: 12, marginTop: 8, textAlign: 'center' }]}>{count} / 5</Text>
+      <Text style={[tokenType.sub, { fontSize: 12, marginTop: 8, textAlign: 'center' }]}>
+        {count} / {need}
+      </Text>
     </View>
   );
 }

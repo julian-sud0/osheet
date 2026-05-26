@@ -13,14 +13,18 @@ import { colors, radii, shadows, spacing, type as tokenType } from '@/theme/toke
 export default function Today() {
   const logs = useAppStore((s) => s.logs);
   const startedAt = useAppStore((s) => s.startedAt);
+  const userMode = useAppStore((s) => s.userMode);
   const dayN = dayNumber(startedAt);
   const totalLogs = logs.length;
   const state = gutWeatherState(logs);
-  const copy = weatherCopy(logs);
-  const need = 5;
+  const copy = weatherCopy(logs, { mode: userMode, startedAt });
+  // `appointment` users get the first-pattern contract loosened — they don't have
+  // time to wait for 5 logs before the product proves itself useful.
+  const need = userMode === 'appointment' ? 3 : 5;
   const insightReady = totalLogs >= need;
-  const pat = insightReady ? patterns(logs) : null;
+  const pat = insightReady ? patterns(logs, userMode) : null;
   const headlineCorrelation = pat?.strongest ?? pat?.watching ?? null;
+  const showDoctorTile = userMode === 'appointment' && totalLogs >= 3;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -68,7 +72,7 @@ export default function Today() {
 
         {insightReady && headlineCorrelation ? (
           <Card onPress={() => router.push({ pathname: '/insight/[id]', params: { id: headlineCorrelation.id } })}>
-            <Label>Watching</Label>
+            <Label>{userMode === 'appointment' ? 'Early signal' : 'Watching'}</Label>
             <Text style={styles.insightHead}>
               {headlineCorrelation.triggerLabel} → {headlineCorrelation.outcomeLabel},{' '}
               {headlineCorrelation.hits} of {headlineCorrelation.n} times
@@ -84,8 +88,18 @@ export default function Today() {
             </View>
           </Card>
         ) : (
-          <ProgressContract have={totalLogs} need={need} />
+          <ProgressContract have={totalLogs} need={need} mode={userMode} />
         )}
+
+        {showDoctorTile ? (
+          <Card onPress={() => router.push('/export')}>
+            <Label>For your doctor</Label>
+            <Text style={styles.insightHead}>You have enough to bring →</Text>
+            <Text style={[tokenType.sub, { fontSize: 12 }]}>
+              Generate a clinician-ready PDF from your last {totalLogs} entries.
+            </Text>
+          </Card>
+        ) : null}
 
         <ContentTile />
       </ScrollView>
@@ -102,13 +116,28 @@ export default function Today() {
   );
 }
 
-function ProgressContract({ have, need }: { have: number; need: number }) {
+function ProgressContract({
+  have,
+  need,
+  mode,
+}: {
+  have: number;
+  need: number;
+  mode: 'exploring' | 'appointment' | 'diagnosed';
+}) {
   const pct = Math.min(100, (have / need) * 100);
+  const remaining = Math.max(0, need - have);
+  const headline =
+    mode === 'appointment'
+      ? `${remaining} more log${remaining === 1 ? '' : 's'} and you'll have enough to bring.`
+      : mode === 'diagnosed'
+      ? 'Still finding your patterns.'
+      : `${remaining} more log${remaining === 1 ? '' : 's'} to start spotting connections.`;
   return (
     <Card tone="fog">
-      <Label>Your first pattern</Label>
+      <Label>{mode === 'appointment' ? 'For your doctor' : 'Your first pattern'}</Label>
       <Text style={{ fontFamily: tokenType.section.fontFamily, fontSize: 16, marginVertical: 8 }}>
-        {need - have} more log{need - have === 1 ? '' : 's'} to start spotting connections.
+        {headline}
       </Text>
       <View style={styles.bar}>
         <View style={[styles.barFill, { width: `${pct}%` }]} />

@@ -4,11 +4,13 @@ import type { Log, LogPatch, StoolLog, TriggerLog } from './types';
 
 type NewLog = Omit<StoolLog, 'id'> | Omit<TriggerLog, 'id'>;
 
+export type UserMode = 'exploring' | 'appointment' | 'diagnosed';
+
 interface AppState {
   hydrated: boolean;
   logs: Log[];
   onboarded: boolean;
-  genericName: boolean;
+  userMode: UserMode;
   startedAt: number;
   bloodAlertShownThisSession: boolean;
 
@@ -19,28 +21,32 @@ interface AppState {
   clearLogs: () => Promise<void>;
 
   setOnboarded: (v: boolean) => void;
-  setGenericName: (v: boolean) => void;
+  setUserMode: (m: UserMode) => void;
   markBloodAlertShown: () => void;
 }
 
-const SETTINGS_KEY = 'osheet:settings:v1';
+const SETTINGS_KEY = 'osheet:settings:v2';
 
 interface PersistedSettings {
   onboarded: boolean;
-  genericName: boolean;
+  userMode: UserMode;
   startedAt: number;
 }
 
 function loadSettings(): PersistedSettings {
-  if (typeof window === 'undefined' || !window.localStorage) {
-    return { onboarded: false, genericName: true, startedAt: Date.now() };
-  }
+  const fallback: PersistedSettings = { onboarded: false, userMode: 'exploring', startedAt: Date.now() };
+  if (typeof window === 'undefined' || !window.localStorage) return fallback;
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
-    if (!raw) return { onboarded: false, genericName: true, startedAt: Date.now() };
-    return JSON.parse(raw);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<PersistedSettings>;
+    return {
+      onboarded: parsed.onboarded ?? false,
+      userMode: parsed.userMode ?? 'exploring',
+      startedAt: parsed.startedAt ?? Date.now(),
+    };
   } catch {
-    return { onboarded: false, genericName: true, startedAt: Date.now() };
+    return fallback;
   }
 }
 
@@ -59,7 +65,7 @@ export const useAppStore = create<AppState>((set, get) => {
     hydrated: false,
     logs: [],
     onboarded: initial.onboarded,
-    genericName: initial.genericName,
+    userMode: initial.userMode,
     startedAt: initial.startedAt,
     bloodAlertShownThisSession: false,
 
@@ -96,14 +102,14 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setOnboarded(v) {
       set({ onboarded: v });
-      const { genericName, startedAt } = get();
-      saveSettings({ onboarded: v, genericName, startedAt });
+      const { userMode, startedAt } = get();
+      saveSettings({ onboarded: v, userMode, startedAt });
     },
 
-    setGenericName(v) {
-      set({ genericName: v });
+    setUserMode(m) {
+      set({ userMode: m });
       const { onboarded, startedAt } = get();
-      saveSettings({ onboarded, genericName: v, startedAt });
+      saveSettings({ onboarded, userMode: m, startedAt });
     },
 
     markBloodAlertShown() {

@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RowActionsSheet } from '@/components/RowActionsSheet';
 import { Pill, Seg } from '@/components/ui';
 import { useAppStore } from '@/data/store';
@@ -104,6 +104,7 @@ function StoolRowContent({ log }: { log: StoolLog }) {
         <Text style={styles.rowTitle}>{b.name}</Text>
         <Text style={styles.rowMeta}>{extras.length > 0 ? extras.join(' · ') : 'No notes'}</Text>
       </View>
+      {log.photoUri ? <Image source={{ uri: log.photoUri }} style={styles.thumb} /> : null}
       <Text style={styles.rowTime}>{formatTime(log.ts)}</Text>
     </>
   );
@@ -128,6 +129,7 @@ function TriggerRowContent({ log }: { log: TriggerLog }) {
         <Text style={styles.rowTitle}>{t.label}</Text>
         <Text style={styles.rowMeta}>{meta}</Text>
       </View>
+      {log.photoUri ? <Image source={{ uri: log.photoUri }} style={styles.thumb} /> : null}
       <Text style={styles.rowTime}>{formatTime(log.ts)}</Text>
     </>
   );
@@ -148,6 +150,7 @@ const styles = StyleSheet.create({
     ...shadows.card,
   },
   dot: { width: 20, height: 20, borderRadius: 10 },
+  thumb: { width: 40, height: 40, borderRadius: 8, backgroundColor: colors.fog },
   rowTitle: { fontWeight: '500', fontSize: 14, color: colors.cocoa },
   rowMeta: { color: colors.cocoa2, fontSize: 12, marginTop: 2 },
   rowTime: { fontSize: 11, color: colors.cocoa2 },

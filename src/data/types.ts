@@ -31,6 +31,7 @@ export interface TriggerLog extends BaseLog {
   subtype: TriggerSubtype;
   tags: string[];
   note?: string;
+  photoUri?: string;
   /** Indicates the user tapped "Finish this later" — entry is timestamped but partial. */
   draft: boolean;
 }

@@ -1,4 +1,5 @@
 import type { Log, StoolLog } from '@/data/types';
+import type { UserMode } from '@/data/store';
 
 /**
  * Derives gut weather state + copy from real log history.
@@ -67,15 +68,33 @@ function topProblemTag(logs: Log[]): string | null {
   return best.tag;
 }
 
-export function weatherCopy(logs: Log[]): WeatherCopy {
+const ONE_WEEK_MS = 7 * 86400000;
+
+export function weatherCopy(
+  logs: Log[],
+  opts: { mode?: UserMode; startedAt?: number } = {},
+): WeatherCopy {
   const state = gutWeatherState(logs);
   const stoolCount = logs.filter((l) => l.type === 'stool').length;
+  const mode = opts.mode ?? 'exploring';
+  const inEarlyDiagnosedWindow =
+    mode === 'diagnosed' && opts.startedAt !== undefined && Date.now() - opts.startedAt < ONE_WEEK_MS;
 
   if (stoolCount === 0) {
     return {
       title: 'A gentle start.',
       em: 'Nothing logged yet.',
       footer: 'Tap the + to record your first entry.',
+    };
+  }
+
+  // Diagnosed mode: hold space for the early-week noise rather than calling it
+  // a flare. The data is real, but the narrative would be premature.
+  if (inEarlyDiagnosedWindow && state !== 'calm') {
+    return {
+      title: 'Still settling in.',
+      em: 'Early days are noisy by nature.',
+      footer: `${stoolCount} entries · tap for the timeline`,
     };
   }
 

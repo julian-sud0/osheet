@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, TopBar } from '@/components/ui';
+import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
 import type { BristolType, Pain, StoolExtra, Urgency } from '@/data/types';
 import { bristolByType } from '@/domain/bristol';
@@ -9,7 +10,8 @@ import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 const URGENCY: Urgency[] = ['None', 'A bit', "Couldn't wait"];
 const PAIN: Pain[] = ['None', 'Mild', 'Moderate', 'Sharp'];
-const EXTRAS: StoolExtra[] = ['Blood', 'Mucus', 'Felt incomplete', 'Photo'];
+// "Photo" is no longer a chip — it gets its own capture UI below.
+const EXTRAS: Exclude<StoolExtra, 'Photo'>[] = ['Blood', 'Mucus', 'Felt incomplete'];
 
 export default function StoolDetailsScreen() {
   const params = useLocalSearchParams<{ bristol?: string }>();
@@ -22,10 +24,11 @@ export default function StoolDetailsScreen() {
 
   const [urgency, setUrgency] = useState<Urgency | null>(null);
   const [pain, setPain] = useState<Pain | null>(null);
-  const [extras, setExtras] = useState<StoolExtra[]>([]);
+  const [extras, setExtras] = useState<Exclude<StoolExtra, 'Photo'>[]>([]);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [showBloodAlert, setShowBloodAlert] = useState(false);
 
-  const toggleExtra = (e: StoolExtra) => {
+  const toggleExtra = (e: Exclude<StoolExtra, 'Photo'>) => {
     const wasOn = extras.includes(e);
     const next = wasOn ? extras.filter((x) => x !== e) : [...extras, e];
     setExtras(next);
@@ -35,13 +38,20 @@ export default function StoolDetailsScreen() {
     }
   };
 
+  const addPhoto = async () => {
+    const uri = await capturePhoto();
+    if (uri) setPhotoUri(uri);
+  };
+
   const finish = async () => {
+    const finalExtras: StoolExtra[] = photoUri ? [...extras, 'Photo'] : [...extras];
     await addLog({
       type: 'stool',
       bristol,
       urgency,
       pain,
-      extras,
+      extras: finalExtras,
+      photoUri: photoUri ?? undefined,
       ts: Date.now(),
     });
     router.replace('/(tabs)');
@@ -85,7 +95,7 @@ export default function StoolDetailsScreen() {
                 {EXTRAS.map((o) => (
                   <Chip
                     key={o}
-                    label={o === 'Photo' ? '📷 Add photo' : o}
+                    label={o}
                     on={extras.includes(o)}
                     variant={o === 'Blood' ? 'terra' : 'sage'}
                     onPress={() => toggleExtra(o)}
@@ -93,6 +103,34 @@ export default function StoolDetailsScreen() {
                 ))}
               </Chips>
             </View>
+          </Card>
+
+          <Card>
+            <Label>Photo (optional)</Label>
+            {photoUri ? (
+              <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Image source={{ uri: photoUri }} style={styles.thumb} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[tokenType.sub, { fontSize: 12 }]}>Saved to this entry.</Text>
+                  <Pressable
+                    onPress={addPhoto}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [{ marginTop: 6 }, pressed && { opacity: 0.6 }]}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.sageDark }}>Retake</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={addPhoto}
+                accessibilityRole="button"
+                accessibilityLabel="Add a photo"
+                style={({ pressed }) => [styles.photoDrop, pressed && { opacity: 0.85 }]}
+              >
+                <Text style={{ fontSize: 13, color: colors.cocoa2 }}>📷 Tap to take or choose a photo</Text>
+              </Pressable>
+            )}
           </Card>
 
           {showBloodAlert ? (
@@ -126,6 +164,17 @@ function BloodAlert({ onDismiss }: { onDismiss: () => void }) {
 const styles = StyleSheet.create({
   scroll: { paddingBottom: 60 },
   pad: { paddingHorizontal: spacing.lg, paddingTop: 14, gap: spacing.md },
+  thumb: { width: 80, height: 80, borderRadius: 14, backgroundColor: colors.fog },
+  photoDrop: {
+    marginTop: 10,
+    minHeight: 80,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(61,51,43,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   alert: {
     backgroundColor: colors.terraLight,
     borderRadius: radii.lg,

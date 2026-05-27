@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,47 +9,43 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { track } from '@/data/analytics';
-import { colors, shadows } from '@/theme/tokens';
+import { colors, radii, shadows } from '@/theme/tokens';
 
 /**
- * Radial multi-action FAB. Tap the main + → 4 child FABs fan up-and-left
- * in a quarter-arc (Log stool / food / meds / stress). Long-press the
- * main + → skips the menu, routes straight to /log/bristol (fast path).
+ * Vertical speed-dial FAB. Tap the main + → 4 child rows stack vertically
+ * above it (Stool / Food / Meds / Stress from bottom to top), each a small
+ * circular icon with a left-aligned label pill so labels never collide
+ * with page content the way the previous radial geometry did.
  *
- * Radial-into-the-screen (not toward the corner) so the four actions are
- * comfortably reachable with a thumb on a phone in portrait.
+ * Long-press the main + → skip the menu and route straight to /log/bristol
+ * (the most common action).
  */
 
 interface Action {
-  id: 'stool' | 'food' | 'meds' | 'stress' | 'sleep';
+  id: 'stool' | 'food' | 'meds' | 'stress';
   icon: React.ComponentProps<typeof Feather>['name'];
   label: string;
   onPress: () => void;
 }
 
-const RADIUS = 110; // distance from main FAB centre to child centre
+const ROW_GAP = 14;
+const CHILD_SIZE = 48;
+const FAB_SIZE = 60;
+const FAB_RIGHT = 22;
+const FAB_BOTTOM = 90;
 
 export function RadialFab() {
-  const open = useSharedValue(0); // 0 = closed, 1 = open
-  const [isOpen, setIsOpen] = useState(false); // JS mirror for pointer-events gating
+  const open = useSharedValue(0);
+  const [isOpen, setIsOpen] = useState(false);
 
   const actions: Action[] = [
     {
-      id: 'stool',
-      icon: 'circle',
-      label: 'Stool',
+      id: 'stress',
+      icon: 'activity',
+      label: 'Stress',
       onPress: () => {
-        track('fab_child_tapped', { which: 'stool' });
-        router.push('/log/bristol');
-      },
-    },
-    {
-      id: 'food',
-      icon: 'coffee',
-      label: 'Food',
-      onPress: () => {
-        track('fab_child_tapped', { which: 'food' });
-        router.push({ pathname: '/log/trigger', params: { kind: 'ate' } });
+        track('fab_child_tapped', { which: 'stress' });
+        router.push({ pathname: '/log/trigger', params: { kind: 'stress' } });
       },
     },
     {
@@ -62,19 +58,26 @@ export function RadialFab() {
       },
     },
     {
-      id: 'stress',
-      icon: 'activity',
-      label: 'Stress',
+      id: 'food',
+      icon: 'coffee',
+      label: 'Food',
       onPress: () => {
-        track('fab_child_tapped', { which: 'stress' });
-        router.push({ pathname: '/log/trigger', params: { kind: 'stress' } });
+        track('fab_child_tapped', { which: 'food' });
+        router.push({ pathname: '/log/trigger', params: { kind: 'ate' } });
+      },
+    },
+    {
+      id: 'stool',
+      icon: 'circle',
+      label: 'Stool',
+      onPress: () => {
+        track('fab_child_tapped', { which: 'stool' });
+        router.push('/log/bristol');
       },
     },
   ];
-
-  // 4 actions across a 75° quarter-arc opening up-and-left.
-  // Angles measured CCW from straight left.
-  const angles = [15, 40, 65, 90]; // stool, food, meds, stress
+  // Index 0 (Stress) is the FARTHEST from the main FAB; index N-1 (Stool)
+  // is the CLOSEST. Bottom-to-top stacking matches the array.
 
   const toggle = () => {
     const next = !isOpen;
@@ -98,37 +101,42 @@ export function RadialFab() {
 
   return (
     <>
-      {/* Backdrop is only mounted when the menu is open, so it can't intercept
-          taps when closed. Critical: an absolutely positioned backdrop with
-          pointerEvents="auto" sitting over every tab would eat everything. */}
       {isOpen ? (
         <Animated.View style={[styles.backdrop, backdropStyle]} pointerEvents="auto">
-          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close menu" />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={close}
+            accessibilityLabel="Close menu"
+          />
         </Animated.View>
       ) : null}
 
-      {actions.map((a, i) => (
-        <ChildFab
-          key={a.id}
-          angleDeg={angles[i]}
-          open={open}
-          isOpen={isOpen}
-          icon={a.icon}
-          label={a.label}
-          onPress={() => {
-            close();
-            a.onPress();
-          }}
-        />
-      ))}
+      {actions.map((a, i) => {
+        // i is the distance from the FAB (0 = farthest above, last = closest).
+        // We want the array's LAST entry (Stool) sitting just above the FAB.
+        const distanceFromFab = actions.length - i;
+        return (
+          <ChildRow
+            key={a.id}
+            distance={distanceFromFab}
+            stagger={i}
+            open={open}
+            isOpen={isOpen}
+            icon={a.icon}
+            label={a.label}
+            onPress={() => {
+              close();
+              a.onPress();
+            }}
+          />
+        );
+      })}
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Log something"
         onPress={toggle}
         onLongPress={() => {
-          // Fast path: long-press skips the menu and goes straight to the
-          // most common action (stool log).
           track('fab_child_tapped', { which: 'stool', via: 'long_press' });
           router.push('/log/bristol');
         }}
@@ -141,30 +149,29 @@ export function RadialFab() {
   );
 }
 
-function ChildFab({
-  angleDeg,
+function ChildRow({
+  distance,
+  stagger,
   open,
   isOpen,
   icon,
   label,
   onPress,
 }: {
-  angleDeg: number;
+  distance: number; // 1 = closest to FAB, N = farthest
+  stagger: number; // 0 = farthest (animates last), N-1 = closest (animates first)
   open: Animated.SharedValue<number>;
   isOpen: boolean;
   icon: Action['icon'];
   label: string;
   onPress: () => void;
 }) {
-  const rad = (angleDeg * Math.PI) / 180;
-  // Up-and-left: x = -cos(angle) * R; y = -sin(angle) * R
-  const dx = -Math.cos(rad) * RADIUS;
-  const dy = -Math.sin(rad) * RADIUS;
+  const verticalOffset = distance * (CHILD_SIZE + ROW_GAP);
 
   const childStyle = useAnimatedStyle(() => {
     const t = open.value;
     return {
-      transform: [{ translateX: dx * t }, { translateY: dy * t }, { scale: 0.4 + t * 0.6 }],
+      transform: [{ translateY: -verticalOffset * t }, { scale: 0.6 + t * 0.4 }],
       opacity: t,
     };
   });
@@ -173,14 +180,14 @@ function ChildFab({
     opacity: withTiming(open.value, { duration: 180 }),
   }));
 
-  // Children stay mounted so the close animation can play. When closed
-  // they sit invisibly at the main FAB's coordinates only (not covering the
-  // rest of the screen) — pointerEvents toggled via prop based on isOpen.
   return (
     <Animated.View
-      style={[styles.childWrap, childStyle]}
+      style={[styles.rowWrap, childStyle]}
       pointerEvents={isOpen ? 'auto' : 'none'}
     >
+      <Animated.View style={[styles.labelWrap, labelStyle]}>
+        <Text style={styles.labelText}>{label}</Text>
+      </Animated.View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Log ${label}`}
@@ -189,15 +196,9 @@ function ChildFab({
       >
         <Feather name={icon} size={20} color={colors.cocoa} />
       </Pressable>
-      <Animated.Text style={[styles.childLabel, labelStyle]}>{label}</Animated.Text>
     </Animated.View>
   );
 }
-
-const FAB_RIGHT = 22;
-const FAB_BOTTOM = 90;
-const FAB_SIZE = 60;
-const CHILD_SIZE = 48;
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -222,13 +223,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   plus: { color: colors.cream, fontSize: 32, lineHeight: 34 },
-  childWrap: {
+
+  rowWrap: {
     position: 'absolute',
-    // Anchor the child wrapper so its centre aligns with the main FAB's centre
     right: FAB_RIGHT + (FAB_SIZE - CHILD_SIZE) / 2,
     bottom: FAB_BOTTOM + (FAB_SIZE - CHILD_SIZE) / 2,
     width: CHILD_SIZE,
+    height: CHILD_SIZE,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     zIndex: 9,
   },
   child: {
@@ -240,14 +244,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...shadows.card,
   },
-  childLabel: {
-    marginTop: 6,
-    fontSize: 11,
+  labelWrap: {
+    position: 'absolute',
+    right: CHILD_SIZE + 10,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+    borderRadius: radii.pill,
+    ...shadows.card,
+  },
+  labelText: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.cocoa,
-    backgroundColor: 'rgba(246,241,232,0.92)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
   },
 });

@@ -16,6 +16,8 @@ export default function QuestionnaireJourney() {
   const [step, setStep] = useState(0); // 0..items.length = answering; items.length+1 = results
   const [responses, setResponses] = useState<number[]>(() => instrument?.items.map(() => -1) ?? []);
   const [revealed, setRevealed] = useState(false);
+  const [previousScore, setPreviousScore] = useState<number | undefined>(undefined);
+  const allQuestionnaires = useAppStore((s) => s.questionnaires);
 
   if (!instrument) {
     return (
@@ -49,6 +51,9 @@ export default function QuestionnaireJourney() {
 
   const next = () => {
     if (step + 1 === instrument.items.length) {
+      // Capture the previous score BEFORE persisting the new one so the
+      // results screen can show a delta if there's prior history.
+      setPreviousScore(previousScoreFor(allQuestionnaires, instrument.id));
       setStep(step + 1);
       track('questionnaire_completed', { type: instrument.id, score });
       void addResult({
@@ -88,9 +93,11 @@ export default function QuestionnaireJourney() {
 
         {isResults ? (
           <ResultsScreen
-            instrument={instrument}
+            instrument={{ id: instrument.id, scoreRange: instrument.scoreRange, items: instrument.items }}
             score={score}
             label={scoreLabel}
+            responses={responses}
+            previousScore={previousScore}
           />
         ) : null}
       </ScrollView>
@@ -146,7 +153,14 @@ function ItemScreen({
 
       <View style={{ marginTop: 18 }}>
         {item.input.type === 'slider' ? (
-          <SliderInput value={value} min={item.input.min} max={item.input.max} onChange={onChange} />
+          <SliderInput
+            value={value}
+            min={item.input.min}
+            max={item.input.max}
+            lowLabel={item.input.lowLabel}
+            highLabel={item.input.highLabel}
+            onChange={onChange}
+          />
         ) : (
           <LikertInput
             value={value}
@@ -172,11 +186,15 @@ function SliderInput({
   value,
   min,
   max,
+  lowLabel,
+  highLabel,
   onChange,
 }: {
   value: number;
   min: number;
   max: number;
+  lowLabel: string;
+  highLabel: string;
   onChange: (v: number) => void;
 }) {
   // Visual analog scale 0-100. Use native <input type="range"> on web for
@@ -195,8 +213,8 @@ function SliderInput({
           style={{ width: '100%', accentColor: colors.sage }}
         />
         <View style={styles.sliderLabels}>
-          <Text style={tokenType.sub}>None</Text>
-          <Text style={tokenType.sub}>As bad as imaginable</Text>
+          <Text style={tokenType.sub}>{lowLabel}</Text>
+          <Text style={tokenType.sub}>{highLabel}</Text>
         </View>
       </View>
     );
@@ -269,12 +287,22 @@ function ResultsScreen({
   instrument,
   score,
   label,
+  responses,
+  previousScore,
 }: {
-  instrument: { id: InstrumentId; scoreRange: [number, number] };
+  instrument: { id: InstrumentId; scoreRange: [number, number]; items: Item[] };
   score: number;
   label: string;
+  responses: number[];
+  previousScore?: number;
 }) {
-  const pct = ((score - instrument.scoreRange[0]) / (instrument.scoreRange[1] - instrument.scoreRange[0])) * 100;
+  const pct =
+    ((score - instrument.scoreRange[0]) / (instrument.scoreRange[1] - instrument.scoreRange[0])) * 100;
+  const items = instrument.items;
+  const action = nextAction(instrument.id, score);
+  const delta = previousScore !== undefined ? score - previousScore : undefined;
+  const deltaCopy = delta !== undefined ? deltaInterpretation(instrument.id, delta) : null;
+
   return (
     <View style={{ gap: spacing.md }}>
       <Text style={tokenType.title}>Your score</Text>
@@ -294,21 +322,139 @@ function ResultsScreen({
         />
       </View>
 
-      <Card tone="fog" style={{ marginTop: 14 }}>
-        <Label>What this is for</Label>
-        <Text style={[tokenType.sub, { marginTop: 6, color: colors.cocoa }]}>
-          {instrument.id === 'ibs-sss'
-            ? 'IBS-SSS is the standard severity score gastroenterologists use to track change over time. A drop of 50+ between visits is usually considered clinically meaningful.'
-            : 'SIBDQ tracks how IBD affects daily life across symptoms, social function, and mood. Higher is better; a 10-point improvement is clinically meaningful.'}
-        </Text>
+      {/* Item-by-item breakdown — shows what's driving the score. */}
+      <Card style={{ marginTop: 14 }}>
+        <Label>What's driving your score</Label>
+        <View style={{ gap: 10, marginTop: 12 }}>
+          {items.map((item, i) => {
+            const itemMax = item.input.type === 'slider' ? item.input.max : item.input.max;
+            const r = responses[i];
+            const w = itemMax > 0 ? Math.max(2, (r / itemMax) * 100) : 0;
+            return (
+              <View key={i} style={{ gap: 4 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={[tokenType.sub, { fontSize: 12, flex: 1, color: colors.cocoa }]} numberOfLines={1}>
+                    {shortLabel(item.prompt)}
+                  </Text>
+                  <Text style={[tokenType.sub, { fontSize: 12, marginLeft: 8 }]}>
+                    {r} / {itemMax}
+                  </Text>
+                </View>
+                <View style={styles.breakdownBar}>
+                  <View style={[styles.breakdownFill, { width: `${w}%` }]} />
+                </View>
+              </View>
+            );
+          })}
+        </View>
       </Card>
 
-      <Text style={[tokenType.sub, { marginTop: 14 }]}>
-        Retake this in 2–4 weeks to see your change. Your doctor PDF will include the most recent
-        score automatically.
+      {/* Compare to previous. */}
+      {delta !== undefined && deltaCopy ? (
+        <Card tone="fog">
+          <Label>Since your last take</Label>
+          <Text style={{ fontFamily: tokenType.section.fontFamily, fontSize: 22, color: colors.cocoa, marginTop: 6 }}>
+            {delta === 0 ? 'No change' : `${delta < 0 ? '↓' : '↑'} ${Math.abs(delta)}`}
+          </Text>
+          <Text style={[tokenType.sub, { fontSize: 13, marginTop: 4 }]}>{deltaCopy}</Text>
+        </Card>
+      ) : null}
+
+      {/* Severity-tied next action. */}
+      <Card>
+        <Label>What now?</Label>
+        <Text style={[tokenType.sub, { marginTop: 6, fontSize: 14, color: colors.cocoa }]}>
+          {action.copy}
+        </Text>
+        {action.cta ? (
+          <View style={{ marginTop: 12 }}>
+            <Button label={action.cta.label} variant="sage" onPress={action.cta.onPress} />
+          </View>
+        ) : null}
+      </Card>
+
+      {/* Honesty + retake nudge. */}
+      <Text style={[tokenType.sub, { marginTop: 14, fontSize: 12, fontStyle: 'italic' }]}>
+        Most useful retaken in 2–4 weeks. This isn&apos;t a diagnosis — your doctor uses scores like
+        this alongside the rest of your story.
       </Text>
     </View>
   );
+}
+
+function shortLabel(prompt: string): string {
+  // Use the first key noun phrase from each prompt so the breakdown stays readable.
+  const map: Record<string, string> = {
+    'How severe has your abdominal pain': 'Pain severity',
+    'On how many of the last 10 days': 'Pain frequency',
+    'How severe has your bloating': 'Bloating',
+    'How dissatisfied have you been with your bowel': 'Bowel habit',
+    'How much have your symptoms interfered': 'Life interference',
+    'How often have you felt tired': 'Fatigue',
+    'How frequently have your bowel movements': 'Bowel movements',
+    'How depressed or discouraged': 'Mood',
+    'How often have you been unable to attend': 'Missed events',
+    'How much trouble have you had with cramping': 'Cramping',
+    'How relaxed and free of tension': 'Tension',
+    'How often has gas or passing wind': 'Gas',
+    'How often have you felt impatient': 'Restlessness',
+    'How often have accidents or fears': 'Accident worry',
+    'How upset have you been by your symptoms': 'Symptom distress',
+  };
+  for (const prefix in map) {
+    if (prompt.startsWith(prefix)) return map[prefix];
+  }
+  return prompt.slice(0, 24) + '…';
+}
+
+interface NextAction {
+  copy: string;
+  cta?: { label: string; onPress: () => void };
+}
+
+function nextAction(id: InstrumentId, score: number): NextAction {
+  if (id === 'ibs-sss') {
+    if (score >= 300) {
+      return {
+        copy: 'Worth bringing to your GI. A severe score with specific contributing items is exactly the data a clinician can act on.',
+        cta: { label: 'Generate doctor PDF →', onPress: () => router.replace('/export') },
+      };
+    }
+    if (score >= 175) return { copy: 'Track for 2–3 weeks, then retake to see your change.' };
+    if (score >= 75) return { copy: 'Keep watching — small changes are worth recording.' };
+    return { copy: "Whatever you're doing is working. The instrument is most useful when symptoms shift." };
+  }
+  // SIBDQ — higher is better (10-70)
+  if (score < 30) {
+    return {
+      copy: 'Quality-of-life impact looks high. Bringing this score to your IBD team is worth the visit.',
+      cta: { label: 'Generate doctor PDF →', onPress: () => router.replace('/export') },
+    };
+  }
+  if (score < 50) return { copy: 'Moderate impact. Retaking in 2–4 weeks will show whether your trend is moving.' };
+  if (score < 60) return { copy: 'Mild impact today. Keep tracking; small improvements are real.' };
+  return { copy: 'Good signal today. Worth keeping the rhythm that got you here.' };
+}
+
+function deltaInterpretation(id: InstrumentId, delta: number): string {
+  if (id === 'ibs-sss') {
+    if (delta <= -50) return 'A drop of 50+ is typically considered clinically meaningful.';
+    if (delta <= -20) return 'A real change in the right direction.';
+    if (delta < 20) return 'Steady — within the noise band.';
+    if (delta < 50) return 'A real change in the harder direction.';
+    return 'A rise of 50+ — worth raising at your next visit.';
+  }
+  // SIBDQ — higher is better
+  if (delta >= 10) return 'A 10-point rise is typically considered clinically meaningful.';
+  if (delta >= 4) return 'A real change in the right direction.';
+  if (delta > -4) return 'Steady — within the noise band.';
+  if (delta > -10) return 'A real drop — worth tracking closely.';
+  return 'A 10-point drop — worth raising at your next visit.';
+}
+
+function previousScoreFor(qs: { type: InstrumentId; ts: number; score: number }[], type: InstrumentId): number | undefined {
+  const matches = qs.filter((q) => q.type === type).sort((a, b) => b.ts - a.ts);
+  return matches[0]?.score;
 }
 
 const styles = StyleSheet.create({
@@ -326,6 +472,8 @@ const styles = StyleSheet.create({
   },
   progressBar: { height: 4, backgroundColor: colors.fog, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.sage, borderRadius: 2 },
+  breakdownBar: { height: 6, backgroundColor: colors.fog, borderRadius: 3, overflow: 'hidden' },
+  breakdownFill: { height: '100%', backgroundColor: colors.terra, borderRadius: 3 },
   skip: { paddingVertical: 6 },
   sliderValue: {
     fontFamily: tokenType.section.fontFamily,

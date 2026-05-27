@@ -59,12 +59,24 @@ export type ExerciseFrequency = 'rarely' | 'weekly_1_2' | 'weekly_3_4' | 'daily'
 export type SleepDuration = 'under_5' | '5_to_6' | '7_to_8' | 'over_9';
 export type AlcoholFrequency = 'none' | 'occasional' | 'weekly' | 'daily';
 
+export type Region =
+  | 'north_america'
+  | 'uk_ireland'
+  | 'europe'
+  | 'latin_america'
+  | 'middle_east'
+  | 'africa'
+  | 'south_asia'
+  | 'east_asia'
+  | 'other';
+
 export interface Profile {
   age?: number;
   diet?: DietPattern;
   exercise?: ExerciseFrequency;
   sleep?: SleepDuration;
   alcohol?: AlcoholFrequency;
+  region?: Region;
 }
 
 export type QuestionnaireType = 'ibs-sss' | 'sibdq';

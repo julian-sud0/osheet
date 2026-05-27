@@ -5,6 +5,7 @@ import { ContentTile } from '@/components/ContentTile';
 import { WeatherScene } from '@/components/WeatherScene';
 import { track } from '@/data/analytics';
 import { useAppStore } from '@/data/store';
+import type { Log } from '@/data/types';
 import { TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { patterns } from '@/domain/patterns';
 import { dayNumber } from '@/domain/time';
@@ -30,9 +31,10 @@ export default function Today() {
   // time to wait for 5 logs before the product proves itself useful.
   const need = userMode === 'appointment' ? 3 : 5;
   const insightReady = totalLogs >= need;
-  const pat = insightReady ? patterns(logs, userMode) : null;
+  const pat = insightReady ? patterns(logs, userMode, profile) : null;
   const headlineCorrelation = pat?.strongest ?? pat?.watching ?? null;
   const showDoctorTile = userMode === 'appointment' && totalLogs >= 3;
+  const topTag = insightReady && !headlineCorrelation ? topLoggedTag(logs) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -127,6 +129,8 @@ export default function Today() {
               />
             </View>
           </Card>
+        ) : insightReady ? (
+          <StillWatchingCard topTag={topTag} freqPerDay={freqPerDayThisWeek(logs)} />
         ) : (
           <ProgressContract have={totalLogs} need={need} mode={userMode} />
         )}
@@ -145,6 +149,52 @@ export default function Today() {
       </ScrollView>
     </View>
   );
+}
+
+function StillWatchingCard({
+  topTag,
+  freqPerDay,
+}: {
+  topTag: { tag: string; count: number } | null;
+  freqPerDay: number;
+}) {
+  return (
+    <Card tone="fog">
+      <Label>Still watching</Label>
+      <Text style={{ fontFamily: tokenType.section.fontFamily, fontSize: 16, marginVertical: 8 }}>
+        {topTag
+          ? `Most-logged so far: ${topTag.tag} · ${topTag.count}×`
+          : 'You have stool data but no triggers yet.'}
+      </Text>
+      <Text style={[tokenType.sub, { fontSize: 13 }]}>
+        {topTag
+          ? "A real pattern needs a few flare days alongside the triggers before it surfaces. Keep logging when you eat or feel something distinctive."
+          : 'Quick-log a meal or stress event to unlock connections.'}
+      </Text>
+      <Text style={[tokenType.sub, { fontSize: 12, marginTop: 8, fontStyle: 'italic' }]}>
+        Averaging {freqPerDay} log{freqPerDay === 1 ? '' : 's'} per day this week.
+      </Text>
+    </Card>
+  );
+}
+
+function topLoggedTag(logs: Log[]): { tag: string; count: number } | null {
+  const counts = new Map<string, number>();
+  for (const l of logs) {
+    if (l.type !== 'trigger') continue;
+    for (const t of l.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+  }
+  let best: { tag: string; count: number } | null = null;
+  for (const [tag, count] of counts.entries()) {
+    if (!best || count > best.count) best = { tag, count };
+  }
+  return best;
+}
+
+function freqPerDayThisWeek(logs: Log[]): number {
+  const week = Date.now() - 7 * 86400000;
+  const recent = logs.filter((l) => l.ts >= week).length;
+  return Math.round((recent / 7) * 10) / 10;
 }
 
 function ProgressContract({

@@ -10,16 +10,29 @@ import type {
   ExerciseFrequency,
   Profile,
   QuestionnaireResult,
+  Region,
   SleepDuration,
 } from '@/data/types';
 import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 const DIET_OPTIONS: { value: DietPattern; label: string }[] = [
-  { value: 'standard', label: 'Standard' },
+  { value: 'standard', label: 'Mixed / typical' },
   { value: 'mediterranean', label: 'Mediterranean' },
   { value: 'vegetarian', label: 'Vegetarian' },
   { value: 'vegan', label: 'Vegan' },
   { value: 'lowfodmap', label: 'Low-FODMAP (attempted)' },
+  { value: 'other', label: 'Other' },
+];
+
+const REGION_OPTIONS: { value: Region; label: string }[] = [
+  { value: 'north_america', label: 'North America' },
+  { value: 'uk_ireland', label: 'UK & Ireland' },
+  { value: 'europe', label: 'Europe' },
+  { value: 'latin_america', label: 'Latin America' },
+  { value: 'middle_east', label: 'Middle East' },
+  { value: 'africa', label: 'Africa' },
+  { value: 'south_asia', label: 'South Asia' },
+  { value: 'east_asia', label: 'East Asia' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -95,6 +108,20 @@ export default function ProfileScreen() {
             <Chips>
               {DIET_OPTIONS.map((o) => (
                 <Chip key={o.value} label={o.label} on={profile.diet === o.value} onPress={() => set('diet', o.value)} />
+              ))}
+            </Chips>
+          </View>
+        </Card>
+
+        <Card>
+          <Label>Region</Label>
+          <Text style={[tokenType.sub, { fontSize: 12, marginTop: 6 }]}>
+            Helps your doctor interpret &ldquo;typical diet&rdquo;. Skippable.
+          </Text>
+          <View style={{ marginTop: 10 }}>
+            <Chips>
+              {REGION_OPTIONS.map((o) => (
+                <Chip key={o.value} label={o.label} on={profile.region === o.value} onPress={() => set('region', o.value)} />
               ))}
             </Chips>
           </View>

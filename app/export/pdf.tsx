@@ -127,12 +127,24 @@ function capitalise(s: string): string {
 }
 
 const DIET_LABEL: Record<string, string> = {
-  standard: 'standard diet',
+  standard: 'mixed / typical diet',
   mediterranean: 'Mediterranean-leaning',
   vegetarian: 'vegetarian',
   vegan: 'vegan',
   lowfodmap: 'low-FODMAP attempted',
   other: 'other diet',
+};
+
+const REGION_LABEL: Record<string, string> = {
+  north_america: 'North America',
+  uk_ireland: 'UK & Ireland',
+  europe: 'Europe',
+  latin_america: 'Latin America',
+  middle_east: 'Middle East',
+  africa: 'Africa',
+  south_asia: 'South Asia',
+  east_asia: 'East Asia',
+  other: 'Other region',
 };
 
 const EXERCISE_LABEL: Record<string, string> = {
@@ -145,6 +157,7 @@ const EXERCISE_LABEL: Record<string, string> = {
 function formatAboutLine(profile: Profile, qs: QuestionnaireResult[]): string | null {
   const parts: string[] = [];
   if (profile.age) parts.push(`Age ${profile.age}`);
+  if (profile.region) parts.push(REGION_LABEL[profile.region] ?? profile.region);
   if (profile.diet) parts.push(DIET_LABEL[profile.diet] ?? profile.diet);
   if (profile.exercise) parts.push(EXERCISE_LABEL[profile.exercise] ?? profile.exercise);
   if (profile.alcohol && profile.alcohol !== 'none') {

@@ -162,7 +162,7 @@ function EmptyState({ count, hint, need = 5 }: { count: number; hint?: string; n
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 160 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   corHead: { fontFamily: tokenType.section.fontFamily, fontSize: 18, color: colors.cocoa, marginVertical: 8 },
   frequencyHead: { fontFamily: tokenType.section.fontFamily, fontSize: 17, color: colors.cocoa, marginVertical: 8 },

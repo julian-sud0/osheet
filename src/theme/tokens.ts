@@ -20,7 +20,10 @@ export const colors = {
   blueLight: '#d7e0e8',
 
   cocoa: '#3D332B',
-  cocoa2: '#6B5E54',
+  // Darkened from #6B5E54 → #5A4D43 for WCAG AA at small sizes. The previous
+  // value passed at large sizes but failed at the 10-13px sizes where it's
+  // actually used.
+  cocoa2: '#5A4D43',
 
   stageBg: '#d9d1c2',
   phoneBezel: '#c9bfae',
@@ -53,7 +56,11 @@ export const fonts = {
 export const radii = {
   sm: 8,
   md: 14,
-  lg: 22,
+  // Standard card radius — consolidates 22/24 variants to a single value.
+  // Use `lg` for ordinary cards (chips, tiles, list items).
+  lg: 24,
+  // `xl` is the hero/feature-card tier (weather, large activity cards).
+  // Keep this distinct from `lg` — the size difference signals importance.
   xl: 28,
   pill: 999,
 } as const;
@@ -71,10 +78,12 @@ export const type = {
   section: { fontFamily: fonts.display, fontSize: 20, lineHeight: 24 },
   body: { fontFamily: fonts.body, fontSize: 14, lineHeight: 21 },
   sub: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19.5, color: colors.cocoa2 },
+  // Section labels are navigation anchors, not metadata. Floor lifted from
+  // 10 → 12 to clear the Apple HIG / Material legibility threshold.
   label: {
     fontFamily: fonts.bodySemibold,
-    fontSize: 10,
-    letterSpacing: 1.2,
+    fontSize: 12,
+    letterSpacing: 1.0,
     textTransform: 'uppercase' as const,
     color: colors.cocoa2,
   },

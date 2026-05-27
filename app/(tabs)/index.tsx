@@ -259,7 +259,7 @@ function weatherTone(state: 'calm' | 'mixed' | 'flare') {
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingTop: 24, gap: 14, paddingBottom: 120 },
+  scroll: { padding: spacing.lg, paddingTop: 24, gap: 14, paddingBottom: 160 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 
   weather: {
@@ -278,7 +278,11 @@ const styles = StyleSheet.create({
     maxWidth: 240,
     color: colors.cocoa,
   },
-  weatherEm: { fontStyle: 'italic', color: colors.terraDark },
+  // Fontweight bumped to 500 so the terracotta italic clears WCAG large-text
+  // contrast (3:1) at this size. Lighter weights failed 4.5:1 AA on the pink
+  // hero background, but darkening the colour would shift the emotional tone
+  // from "rough stretch" to "warning". Heavier weight preserves the palette.
+  weatherEm: { fontStyle: 'italic', fontWeight: '500', color: colors.terraDark },
   weatherFooter: { fontSize: 12, color: colors.cocoa2 },
 
   insightHead: {

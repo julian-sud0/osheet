@@ -200,7 +200,7 @@ function TriggerRowContent({ log }: { log: TriggerLog }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 160 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   empty: { backgroundColor: colors.fog, borderRadius: radii.md, padding: 16 },
   dayLabel: { fontFamily: tokenType.section.fontFamily, fontSize: 14, color: colors.cocoa2, paddingHorizontal: 4, marginTop: 4 },

@@ -222,7 +222,7 @@ const pickerStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 120 },
+  scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 160 },
   cardHead: { fontFamily: tokenType.section.fontFamily, fontSize: 18, marginVertical: 4, color: colors.cocoa },
   modeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   modeValue: { fontWeight: '500', fontSize: 14, color: colors.cocoa },

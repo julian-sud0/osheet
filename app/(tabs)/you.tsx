@@ -55,6 +55,15 @@ export default function You() {
           </Text>
         </Card>
 
+        <Card onPress={() => router.push('/learn')}>
+          <Label>Learn &amp; stories</Label>
+          <Text style={styles.cardHead}>Things to try →</Text>
+          <Text style={tokenType.sub}>
+            Optional, evidence-aligned activities: a self-trial, the Bristol literacy quiz, and
+            (coming) patient stories and care-navigation guides.
+          </Text>
+        </Card>
+
         <Card tone="fog">
           <Label>About</Label>
           <Text style={[tokenType.sub, { marginTop: 8 }]}>

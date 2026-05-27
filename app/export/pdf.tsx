@@ -18,6 +18,8 @@ export default function PDFPreview() {
   const userMode = useAppStore((s) => s.userMode);
   const profile = useAppStore((s) => s.profile);
   const questionnaires = useAppStore((s) => s.questionnaires);
+  const activityRuns = useAppStore((s) => s.activityRuns);
+  const completedTrials = activityRuns.filter((r) => r.activity === 'self-trial' && r.completed);
   const cutoff = Date.now() - DAYS[range as Range] * 86400000;
   const filtered = logs.filter((l) => l.ts >= cutoff);
   const distribution = bristolDistribution(filtered);
@@ -97,6 +99,25 @@ export default function PDFPreview() {
             Mean {result.frequencyTrend.thisWeekPerDay}/day this week, {result.frequencyTrend.lastWeekPerDay}/day last
             week.
           </Text>
+
+          {completedTrials.length > 0 ? (
+            <>
+              <Text style={styles.section}>Self-trials</Text>
+              {completedTrials.map((r) => {
+                const p = r.payload as { candidate: string; durationDays: number; trialFlareDays?: number; priorPeriodFlareDays?: number; dailyCheckIns: Array<{ avoided: boolean }> };
+                const adherent = p.dailyCheckIns.filter((c) => c.avoided).length;
+                const total = p.dailyCheckIns.length;
+                return (
+                  <Text key={r.id} style={[styles.meta, { fontSize: 11, marginTop: 4 }]}>
+                    {p.candidate} · {p.durationDays}-day trial · adherence {adherent}/{total} ·{' '}
+                    {p.trialFlareDays !== undefined && p.priorPeriodFlareDays !== undefined
+                      ? `${p.trialFlareDays} flare days during trial vs ${p.priorPeriodFlareDays} in prior equivalent window`
+                      : 'flare comparison pending'}
+                  </Text>
+                );
+              })}
+            </>
+          ) : null}
         </View>
 
         <View style={styles.actions}>

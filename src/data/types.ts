@@ -88,3 +88,39 @@ export interface QuestionnaireResult {
   responses: number[]; // raw item responses, ordered by item index
   score: number; // computed total score
 }
+
+// --- Interactive activities (opt-in mini-games) ------------------------------
+
+export type ActivityId =
+  | 'self-trial'
+  | 'bristol-quiz'
+  | 'gi-visit-prep'
+  | 'fodmap-basics'
+  | 'stress-gut';
+
+export interface SelfTrialPayload {
+  candidate: string; // e.g. 'Dairy', 'Coffee', or a free-text label
+  durationDays: 14 | 21 | 28;
+  dailyCheckIns: Array<{ ts: number; avoided: boolean; feelingScore: number /* 1-5 */ }>;
+  // Snapshot of the equivalent prior period for comparison after completion.
+  priorPeriodFlareDays?: number;
+  trialFlareDays?: number;
+}
+
+export interface BristolQuizPayload {
+  // Array of {presented, answered} pairs in order. presented is the correct
+  // Bristol type 1-7; answered is what the user picked.
+  rounds: Array<{ presented: number; answered: number }>;
+  score: number; // count correct
+}
+
+export type ActivityPayload = SelfTrialPayload | BristolQuizPayload | Record<string, never>;
+
+export interface ActivityRun {
+  id: string;
+  activity: ActivityId;
+  startTs: number;
+  endTs?: number;
+  completed: boolean;
+  payload: ActivityPayload;
+}

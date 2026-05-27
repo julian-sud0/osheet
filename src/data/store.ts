@@ -1,13 +1,24 @@
 import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { create } from 'zustand';
 import { getRepository } from './LogRepository';
-import type { Log, LogPatch, Profile, QuestionnaireResult, StoolLog, TriggerLog } from './types';
+import type {
+  ActivityId,
+  ActivityPayload,
+  ActivityRun,
+  Log,
+  LogPatch,
+  Profile,
+  QuestionnaireResult,
+  StoolLog,
+  TriggerLog,
+} from './types';
 
 type NewLog = Omit<StoolLog, 'id'> | Omit<TriggerLog, 'id'>;
 
 export type UserMode = 'exploring' | 'appointment' | 'diagnosed';
 
 const QUESTIONNAIRES_KEY = 'osheet:questionnaires:v1';
+const ACTIVITIES_KEY = 'osheet:activities:v1';
 
 interface AppState {
   hydrated: boolean;
@@ -19,6 +30,7 @@ interface AppState {
   softProfilePromptDismissed: boolean;
   profile: Profile;
   questionnaires: QuestionnaireResult[];
+  activityRuns: ActivityRun[];
 
   hydrate: () => Promise<void>;
   addLog: (log: NewLog) => Promise<Log>;
@@ -32,6 +44,9 @@ interface AppState {
   setProfileField: <K extends keyof Profile>(key: K, value: Profile[K]) => void;
   addQuestionnaireResult: (r: Omit<QuestionnaireResult, 'id'>) => Promise<void>;
   dismissSoftProfilePrompt: () => void;
+  startActivity: (activity: ActivityId, initialPayload: ActivityPayload) => Promise<string>;
+  updateActivity: (id: string, patch: Partial<Omit<ActivityRun, 'id' | 'activity'>>) => Promise<void>;
+  completeActivity: (id: string, finalPayload: ActivityPayload) => Promise<void>;
 }
 
 const SETTINGS_KEY = 'osheet:settings:v2';
@@ -90,17 +105,24 @@ export const useAppStore = create<AppState>((set, get) => {
     softProfilePromptDismissed: initial.softProfilePromptDismissed,
     profile: initial.profile,
     questionnaires: [],
+    activityRuns: [],
 
     async hydrate() {
       const repo = getRepository();
       const logs = await repo.list();
       let questionnaires: QuestionnaireResult[] = [];
+      let activityRuns: ActivityRun[] = [];
       try {
         questionnaires = (await idbGet<QuestionnaireResult[]>(QUESTIONNAIRES_KEY)) ?? [];
       } catch {
         /* ignore */
       }
-      set({ logs, questionnaires, hydrated: true });
+      try {
+        activityRuns = (await idbGet<ActivityRun[]>(ACTIVITIES_KEY)) ?? [];
+      } catch {
+        /* ignore */
+      }
+      set({ logs, questionnaires, activityRuns, hydrated: true });
     },
 
     async addLog(log) {
@@ -165,6 +187,46 @@ export const useAppStore = create<AppState>((set, get) => {
     dismissSoftProfilePrompt() {
       set({ softProfilePromptDismissed: true });
       persistSettingsFromState(get());
+    },
+
+    async startActivity(activity, initialPayload) {
+      const run: ActivityRun = {
+        id: `a_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+        activity,
+        startTs: Date.now(),
+        completed: false,
+        payload: initialPayload,
+      };
+      const next = [...get().activityRuns, run];
+      set({ activityRuns: next });
+      try {
+        await idbSet(ACTIVITIES_KEY, next);
+      } catch {
+        /* ignore */
+      }
+      return run.id;
+    },
+
+    async updateActivity(id, patch) {
+      const next = get().activityRuns.map((r) => (r.id === id ? { ...r, ...patch } : r));
+      set({ activityRuns: next });
+      try {
+        await idbSet(ACTIVITIES_KEY, next);
+      } catch {
+        /* ignore */
+      }
+    },
+
+    async completeActivity(id, finalPayload) {
+      const next = get().activityRuns.map((r) =>
+        r.id === id ? { ...r, completed: true, endTs: Date.now(), payload: finalPayload } : r,
+      );
+      set({ activityRuns: next });
+      try {
+        await idbSet(ACTIVITIES_KEY, next);
+      } catch {
+        /* ignore */
+      }
     },
   };
 });

@@ -21,7 +21,16 @@ export type AnalyticsEvent =
   | 'pdf_generated'
   | 'soft_profile_prompt_seen'
   | 'soft_profile_prompt_accepted'
-  | 'soft_profile_prompt_dismissed';
+  | 'soft_profile_prompt_dismissed'
+  | 'activity_started'
+  | 'activity_step_completed'
+  | 'activity_completed'
+  | 'activity_abandoned'
+  | 'tip_shown'
+  | 'tip_dismissed'
+  | 'tip_tapped'
+  | 'story_tapped'
+  | 'community_waitlist_joined';
 
 type Props = Record<string, string | number | boolean | undefined>;
 

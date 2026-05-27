@@ -36,6 +36,7 @@ export default function QuestionnaireJourney() {
   const currentResponse = isAnswering ? responses[step] : -1;
   const score = computeScore(instrument.id, responses);
   const scoreLabel = instrument.scoreLabel(score);
+  const stoolLogCount = useAppStore((s) => s.logs.filter((l) => l.type === 'stool').length);
 
   const setResponse = (val: number) => {
     setResponses((r) => {
@@ -98,6 +99,7 @@ export default function QuestionnaireJourney() {
             label={scoreLabel}
             responses={responses}
             previousScore={previousScore}
+            stoolLogCount={stoolLogCount}
           />
         ) : null}
       </ScrollView>
@@ -289,17 +291,19 @@ function ResultsScreen({
   label,
   responses,
   previousScore,
+  stoolLogCount,
 }: {
   instrument: { id: InstrumentId; scoreRange: [number, number]; items: Item[] };
   score: number;
   label: string;
   responses: number[];
   previousScore?: number;
+  stoolLogCount: number;
 }) {
   const pct =
     ((score - instrument.scoreRange[0]) / (instrument.scoreRange[1] - instrument.scoreRange[0])) * 100;
   const items = instrument.items;
-  const action = nextAction(instrument.id, score);
+  const action = nextAction(instrument.id, score, stoolLogCount);
   const delta = previousScore !== undefined ? score - previousScore : undefined;
   const deltaCopy = delta !== undefined ? deltaInterpretation(instrument.id, delta) : null;
 
@@ -366,6 +370,16 @@ function ResultsScreen({
         <Text style={[tokenType.sub, { marginTop: 6, fontSize: 14, color: colors.cocoa }]}>
           {action.copy}
         </Text>
+        {action.clinicianWants ? (
+          <View style={{ gap: 8, marginTop: 12 }}>
+            {action.clinicianWants.map((line, i) => (
+              <View key={i} style={{ flexDirection: 'row', gap: 8 }}>
+                <Text style={[tokenType.sub, { color: colors.terraDark, fontWeight: '600' }]}>·</Text>
+                <Text style={[tokenType.sub, { flex: 1, color: colors.cocoa }]}>{line}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {action.cta ? (
           <View style={{ marginTop: 12 }}>
             <Button label={action.cta.label} variant="sage" onPress={action.cta.onPress} />
@@ -409,12 +423,38 @@ function shortLabel(prompt: string): string {
 
 interface NextAction {
   copy: string;
+  /** When set, render as a bulleted list under `copy` — what a clinician
+   *  will actually want from a few weeks of logs. Used in the
+   *  severe-score-but-no-logs case to anchor next steps in real data. */
+  clinicianWants?: string[];
   cta?: { label: string; onPress: () => void };
 }
 
-function nextAction(id: InstrumentId, score: number): NextAction {
+const STARTER_LOG_THRESHOLD = 3;
+
+function nextAction(id: InstrumentId, score: number, stoolLogCount: number): NextAction {
+  const hasBaseline = stoolLogCount >= STARTER_LOG_THRESHOLD;
+
   if (id === 'ibs-sss') {
     if (score >= 300) {
+      // Severe — the most consequential branch. If the user has barely logged
+      // yet (e.g. just took the baseline questionnaire at onboarding), don't
+      // promise a doctor-ready PDF. Preview what a clinician will actually
+      // want, and anchor the next step in logging.
+      if (!hasBaseline) {
+        return {
+          copy: "A severe score is real signal. Your GI will get the most out of it with 2–3 weeks of logs behind it. Here's what they'll want to see:",
+          clinicianWants: [
+            'When your flare days happen — time of day, days of week',
+            'What you ate or felt in the hours before each flare',
+            'Whether anything you tried (meds, food, rest) brought it down',
+          ],
+          cta: {
+            label: 'Log your first entry →',
+            onPress: () => router.replace('/log/bristol'),
+          },
+        };
+      }
       return {
         copy: 'Worth bringing to your GI. A severe score with specific contributing items is exactly the data a clinician can act on.',
         cta: { label: 'Generate doctor PDF →', onPress: () => router.replace('/export') },
@@ -424,8 +464,20 @@ function nextAction(id: InstrumentId, score: number): NextAction {
     if (score >= 75) return { copy: 'Keep watching — small changes are worth recording.' };
     return { copy: "Whatever you're doing is working. The instrument is most useful when symptoms shift." };
   }
-  // SIBDQ — higher is better (10-70)
+
+  // SIBDQ — higher is better (10–70). Lower scores = worse QoL.
   if (score < 30) {
+    if (!hasBaseline) {
+      return {
+        copy: "Quality-of-life impact looks high. A clinician will get the most from this score paired with a few weeks of logs. Here's what your IBD team will want:",
+        clinicianWants: [
+          'Stool consistency and frequency over time (the Bristol chart)',
+          'Whether symptoms cluster around specific foods, stress, or sleep',
+          'Whether mood and bowel patterns track together',
+        ],
+        cta: { label: 'Log your first entry →', onPress: () => router.replace('/log/bristol') },
+      };
+    }
     return {
       copy: 'Quality-of-life impact looks high. Bringing this score to your IBD team is worth the visit.',
       cta: { label: 'Generate doctor PDF →', onPress: () => router.replace('/export') },

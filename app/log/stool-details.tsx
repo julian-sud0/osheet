@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, TopBar } from '@/components/ui';
+import { TimestampToggle } from '@/components/TimestampToggle';
 import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
 import type { BristolType, Pain, StoolExtra, Urgency } from '@/data/types';
@@ -27,6 +28,7 @@ export default function StoolDetailsScreen() {
   const [extras, setExtras] = useState<Exclude<StoolExtra, 'Photo'>[]>([]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [showBloodAlert, setShowBloodAlert] = useState(false);
+  const [eventTs, setEventTs] = useState<number>(() => Date.now());
 
   const toggleExtra = (e: Exclude<StoolExtra, 'Photo'>) => {
     const wasOn = extras.includes(e);
@@ -52,7 +54,7 @@ export default function StoolDetailsScreen() {
       pain,
       extras: finalExtras,
       photoUri: photoUri ?? undefined,
-      ts: Date.now(),
+      ts: eventTs,
     });
     router.replace('/(tabs)');
   };
@@ -65,6 +67,13 @@ export default function StoolDetailsScreen() {
         <TopBar title="Saved" subtitle={labelMemo} onBack={() => router.back()} />
         <View style={styles.pad}>
           <SavedBanner title="Saved to today." body="Add detail if you want, or just close." />
+
+          <Card>
+            <Label>When did this happen?</Label>
+            <View style={{ marginTop: 10 }}>
+              <TimestampToggle value={eventTs} onChange={setEventTs} />
+            </View>
+          </Card>
 
           <Card>
             <Label>Was there urgency?</Label>

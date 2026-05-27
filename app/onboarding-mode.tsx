@@ -15,17 +15,17 @@ const OPTIONS: Option[] = [
   {
     mode: 'exploring',
     label: "I'm trying to figure things out",
-    sub: 'Curious about your patterns over time.',
+    sub: "Take your time. We'll watch for patterns as you go.",
   },
   {
     mode: 'appointment',
     label: 'I have an appointment coming up',
-    sub: "We'll prioritise getting your doctor-ready report ready faster.",
+    sub: 'Faster path to a doctor-ready report.',
   },
   {
     mode: 'diagnosed',
     label: 'I was recently diagnosed',
-    sub: "We'll go gentle on the early-days noise.",
+    sub: 'Gentler pace while you find your footing.',
   },
 ];
 

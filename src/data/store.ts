@@ -1,10 +1,13 @@
+import { get as idbGet, set as idbSet } from 'idb-keyval';
 import { create } from 'zustand';
 import { getRepository } from './LogRepository';
-import type { Log, LogPatch, StoolLog, TriggerLog } from './types';
+import type { Log, LogPatch, Profile, QuestionnaireResult, StoolLog, TriggerLog } from './types';
 
 type NewLog = Omit<StoolLog, 'id'> | Omit<TriggerLog, 'id'>;
 
 export type UserMode = 'exploring' | 'appointment' | 'diagnosed';
+
+const QUESTIONNAIRES_KEY = 'osheet:questionnaires:v1';
 
 interface AppState {
   hydrated: boolean;
@@ -13,6 +16,9 @@ interface AppState {
   userMode: UserMode;
   startedAt: number;
   bloodAlertShownThisSession: boolean;
+  softProfilePromptDismissed: boolean;
+  profile: Profile;
+  questionnaires: QuestionnaireResult[];
 
   hydrate: () => Promise<void>;
   addLog: (log: NewLog) => Promise<Log>;
@@ -23,6 +29,9 @@ interface AppState {
   setOnboarded: (v: boolean) => void;
   setUserMode: (m: UserMode) => void;
   markBloodAlertShown: () => void;
+  setProfileField: <K extends keyof Profile>(key: K, value: Profile[K]) => void;
+  addQuestionnaireResult: (r: Omit<QuestionnaireResult, 'id'>) => Promise<void>;
+  dismissSoftProfilePrompt: () => void;
 }
 
 const SETTINGS_KEY = 'osheet:settings:v2';
@@ -31,10 +40,18 @@ interface PersistedSettings {
   onboarded: boolean;
   userMode: UserMode;
   startedAt: number;
+  profile: Profile;
+  softProfilePromptDismissed: boolean;
 }
 
 function loadSettings(): PersistedSettings {
-  const fallback: PersistedSettings = { onboarded: false, userMode: 'exploring', startedAt: Date.now() };
+  const fallback: PersistedSettings = {
+    onboarded: false,
+    userMode: 'exploring',
+    startedAt: Date.now(),
+    profile: {},
+    softProfilePromptDismissed: false,
+  };
   if (typeof window === 'undefined' || !window.localStorage) return fallback;
   try {
     const raw = window.localStorage.getItem(SETTINGS_KEY);
@@ -44,6 +61,8 @@ function loadSettings(): PersistedSettings {
       onboarded: parsed.onboarded ?? false,
       userMode: parsed.userMode ?? 'exploring',
       startedAt: parsed.startedAt ?? Date.now(),
+      profile: parsed.profile ?? {},
+      softProfilePromptDismissed: parsed.softProfilePromptDismissed ?? false,
     };
   } catch {
     return fallback;
@@ -68,11 +87,20 @@ export const useAppStore = create<AppState>((set, get) => {
     userMode: initial.userMode,
     startedAt: initial.startedAt,
     bloodAlertShownThisSession: false,
+    softProfilePromptDismissed: initial.softProfilePromptDismissed,
+    profile: initial.profile,
+    questionnaires: [],
 
     async hydrate() {
       const repo = getRepository();
       const logs = await repo.list();
-      set({ logs, hydrated: true });
+      let questionnaires: QuestionnaireResult[] = [];
+      try {
+        questionnaires = (await idbGet<QuestionnaireResult[]>(QUESTIONNAIRES_KEY)) ?? [];
+      } catch {
+        /* ignore */
+      }
+      set({ logs, questionnaires, hydrated: true });
     },
 
     async addLog(log) {
@@ -102,18 +130,51 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setOnboarded(v) {
       set({ onboarded: v });
-      const { userMode, startedAt } = get();
-      saveSettings({ onboarded: v, userMode, startedAt });
+      persistSettingsFromState(get());
     },
 
     setUserMode(m) {
       set({ userMode: m });
-      const { onboarded, startedAt } = get();
-      saveSettings({ onboarded, userMode: m, startedAt });
+      persistSettingsFromState(get());
     },
 
     markBloodAlertShown() {
       set({ bloodAlertShownThisSession: true });
     },
+
+    setProfileField(key, value) {
+      const next: Profile = { ...get().profile, [key]: value };
+      set({ profile: next });
+      persistSettingsFromState(get());
+    },
+
+    async addQuestionnaireResult(r) {
+      const result: QuestionnaireResult = {
+        ...r,
+        id: `q_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+      };
+      const next = [...get().questionnaires, result];
+      set({ questionnaires: next });
+      try {
+        await idbSet(QUESTIONNAIRES_KEY, next);
+      } catch {
+        /* ignore quota errors */
+      }
+    },
+
+    dismissSoftProfilePrompt() {
+      set({ softProfilePromptDismissed: true });
+      persistSettingsFromState(get());
+    },
   };
 });
+
+function persistSettingsFromState(s: AppState) {
+  saveSettings({
+    onboarded: s.onboarded,
+    userMode: s.userMode,
+    startedAt: s.startedAt,
+    profile: s.profile,
+    softProfilePromptDismissed: s.softProfilePromptDismissed,
+  });
+}

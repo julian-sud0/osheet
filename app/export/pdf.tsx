@@ -1,9 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, TopBar } from '@/components/ui';
+import { track } from '@/data/analytics';
 import { useAppStore } from '@/data/store';
 import { patterns } from '@/domain/patterns';
-import type { Log, StoolLog } from '@/data/types';
+import type { Log, Profile, QuestionnaireResult, StoolLog } from '@/data/types';
+import { INSTRUMENTS } from '@/domain/instruments';
 import { colors, radii, shadows, spacing, type as tokenType } from '@/theme/tokens';
 
 type Range = '2w' | '30d' | '90d';
@@ -13,12 +15,17 @@ const DAYS: Record<Range, number> = { '2w': 14, '30d': 30, '90d': 90 };
 export default function PDFPreview() {
   const { range = '30d' } = useLocalSearchParams<{ range?: Range }>();
   const logs = useAppStore((s) => s.logs);
+  const userMode = useAppStore((s) => s.userMode);
+  const profile = useAppStore((s) => s.profile);
+  const questionnaires = useAppStore((s) => s.questionnaires);
   const cutoff = Date.now() - DAYS[range as Range] * 86400000;
   const filtered = logs.filter((l) => l.ts >= cutoff);
   const distribution = bristolDistribution(filtered);
-  const result = patterns(filtered);
+  const result = patterns(filtered, userMode);
+  const aboutLine = formatAboutLine(profile, questionnaires);
 
   const handleSave = () => {
+    track('pdf_generated', { range });
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.print();
     }
@@ -34,6 +41,13 @@ export default function PDFPreview() {
             WJ-{new Date().toISOString().slice(0, 10).replace(/-/g, '')} · {String(range).toUpperCase()} ·{' '}
             {filtered.length} entries
           </Text>
+
+          {aboutLine ? (
+            <>
+              <Text style={styles.section}>About this person</Text>
+              <Text style={[styles.meta, { fontSize: 12 }]}>{aboutLine}</Text>
+            </>
+          ) : null}
 
           <Text style={styles.section}>Bristol distribution</Text>
           <View style={styles.histo}>
@@ -110,6 +124,40 @@ function bristolDistribution(logs: Log[]): number[] {
 
 function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const DIET_LABEL: Record<string, string> = {
+  standard: 'standard diet',
+  mediterranean: 'Mediterranean-leaning',
+  vegetarian: 'vegetarian',
+  vegan: 'vegan',
+  lowfodmap: 'low-FODMAP attempted',
+  other: 'other diet',
+};
+
+const EXERCISE_LABEL: Record<string, string> = {
+  rarely: 'rarely exercises',
+  weekly_1_2: '1–2× / week exercise',
+  weekly_3_4: '3–4× / week exercise',
+  daily: 'daily exercise',
+};
+
+function formatAboutLine(profile: Profile, qs: QuestionnaireResult[]): string | null {
+  const parts: string[] = [];
+  if (profile.age) parts.push(`Age ${profile.age}`);
+  if (profile.diet) parts.push(DIET_LABEL[profile.diet] ?? profile.diet);
+  if (profile.exercise) parts.push(EXERCISE_LABEL[profile.exercise] ?? profile.exercise);
+  if (profile.alcohol && profile.alcohol !== 'none') {
+    parts.push(`alcohol: ${profile.alcohol}`);
+  }
+  // Latest questionnaire score with severity label.
+  const sorted = [...qs].sort((a, b) => b.ts - a.ts);
+  const latest = sorted[0];
+  if (latest) {
+    const inst = INSTRUMENTS[latest.type];
+    parts.push(`${inst.title.split(' — ')[0]} ${latest.score} (${inst.scoreLabel(latest.score)})`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 const styles = StyleSheet.create({

@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import { router, Tabs } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, shadows } from '@/theme/tokens';
+import { Tabs } from 'expo-router';
+import { View } from 'react-native';
+import { RadialFab } from '@/components/RadialFab';
+import { colors } from '@/theme/tokens';
 
 type IconName = 'home' | 'list' | 'trending-up' | 'user';
 
@@ -38,31 +39,9 @@ export default function TabsLayout() {
         <Tabs.Screen name="you" options={{ title: 'You', tabBarIcon: tabIcon('user') }} />
       </Tabs>
 
-      {/* Persistent FAB — logging is the primary CTA, reachable from any tab. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Log a stool"
-        onPress={() => router.push('/log/bristol')}
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-      >
-        <Text style={styles.fabPlus}>＋</Text>
-      </Pressable>
+      {/* Persistent radial FAB — tap expands into Stool / Food / Meds / Stress;
+          long-press is a fast path to /log/bristol. */}
+      <RadialFab />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute',
-    right: 22,
-    bottom: 90,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.cocoa,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.fab,
-  },
-  fabPlus: { color: colors.cream, fontSize: 28, lineHeight: 30 },
-});

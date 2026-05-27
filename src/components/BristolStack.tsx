@@ -2,8 +2,10 @@ import { useCallback, useRef, useState } from 'react';
 import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   interpolate,
+  runOnJS,
   useAnimatedScrollHandler,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   Extrapolation,
 } from 'react-native-reanimated';
@@ -48,6 +50,16 @@ export function BristolStack({ initial = 4, onChoose }: Props) {
     onScroll: (e) => {
       scrollX.value = e.contentOffset.x;
     },
+  });
+
+  // Derive the active index from scrollX so the dots / CTA always reflect the
+  // visible card. onMomentumScrollEnd doesn't fire reliably on RN Web (no
+  // momentum on mouse / trackpad scrolls), so we can't depend on it as the
+  // source of truth.
+  useDerivedValue(() => {
+    if (itemWidth === 0) return;
+    const next = Math.max(0, Math.min(6, Math.round(scrollX.value / itemWidth)));
+    runOnJS(setIndex)(next);
   });
 
   const scrollTo = useCallback(

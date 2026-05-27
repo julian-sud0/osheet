@@ -8,9 +8,10 @@ import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 export default function PatternsScreen() {
   const logs = useAppStore((s) => s.logs);
   const userMode = useAppStore((s) => s.userMode);
+  const profile = useAppStore((s) => s.profile);
   const need = userMode === 'appointment' ? 3 : 5;
   const ready = logs.length >= need;
-  const result = ready ? patterns(logs, userMode) : null;
+  const result = ready ? patterns(logs, userMode, profile) : null;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.cream }} contentContainerStyle={styles.scroll}>
@@ -37,6 +38,22 @@ export default function PatternsScreen() {
           {result.strongest ? <CorrelationCard correlation={result.strongest} headline="Strongest link" /> : null}
           {result.watching ? <CorrelationCard correlation={result.watching} headline="Watching" muted /> : null}
           {!result.strongest && !result.watching ? <EmptyState count={logs.length} hint="Not enough signal yet — keep logging." /> : null}
+
+          {result.alcoholWatch ? (
+            <Card>
+              <Label>Alcohol watch</Label>
+              <Text style={styles.corHead}>
+                {result.alcoholWatch.flaresAfterAlcohol} of {result.alcoholWatch.flareDaysLast14} flare
+                days followed an alcohol log
+              </Text>
+              <Text style={tokenType.sub}>
+                You marked your intake as {result.alcoholWatch.declared}.{' '}
+                {result.alcoholWatch.alcoholLogsLast14 === 0
+                  ? 'Tag "Alcohol" on a meal log to see the connection more clearly.'
+                  : 'Within 24 hours — worth raising with your GI if it persists.'}
+              </Text>
+            </Card>
+          ) : null}
 
           <Card tone="fog">
             <Label>Frequency</Label>

@@ -2,9 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, Seg, TopBar } from '@/components/ui';
+import { TimestampToggle } from '@/components/TimestampToggle';
 import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
-import { COMMON_FOOD_TAGS, TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
+import { COMMON_FOOD_TAGS, COMMON_MEDS, TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function TriggerScreen() {
@@ -17,6 +18,7 @@ export default function TriggerScreen() {
   const [detailMode, setDetailMode] = useState<'photo' | 'words'>('photo');
   const [note, setNote] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [eventTs, setEventTs] = useState<number>(() => Date.now());
   const draftIdRef = useRef<string | null>(null);
 
   // Lock the timestamp the moment the screen mounts — even if the user never
@@ -59,6 +61,7 @@ export default function TriggerScreen() {
         note: note.trim() || undefined,
         photoUri: photoUri ?? undefined,
         draft: later,
+        ts: eventTs,
       });
     }
     router.replace('/(tabs)');
@@ -71,6 +74,13 @@ export default function TriggerScreen() {
         <View style={styles.pad}>
           <SavedBanner title="Time locked in." body="Add what you had now, or later today." />
 
+          <Card>
+            <Label>When did this happen?</Label>
+            <View style={{ marginTop: 10 }}>
+              <TimestampToggle value={eventTs} onChange={setEventTs} />
+            </View>
+          </Card>
+
           {kind === 'ate' ? (
             <AteDetails
               tags={tags}
@@ -82,6 +92,8 @@ export default function TriggerScreen() {
               photoUri={photoUri}
               onAddPhoto={addPhoto}
             />
+          ) : kind === 'med' ? (
+            <MedDetails tags={tags} onToggleTag={toggleTag} note={note} onChangeNote={setNote} />
           ) : (
             <GenericNote note={note} onChangeNote={setNote} />
           )}
@@ -166,6 +178,47 @@ function AteDetails({
             ))}
           </Chips>
         </View>
+      </Card>
+    </View>
+  );
+}
+
+function MedDetails({
+  tags,
+  onToggleTag,
+  note,
+  onChangeNote,
+}: {
+  tags: string[];
+  onToggleTag: (t: string) => void;
+  note: string;
+  onChangeNote: (s: string) => void;
+}) {
+  return (
+    <View style={{ gap: spacing.md }}>
+      <Card>
+        <Label>Which med?</Label>
+        <View style={{ marginTop: 12 }}>
+          <Chips>
+            {COMMON_MEDS.map((m) => (
+              <Chip key={m} label={m} on={tags.includes(m)} onPress={() => onToggleTag(m)} />
+            ))}
+          </Chips>
+        </View>
+        <Text style={[tokenType.sub, { fontSize: 11, marginTop: 10, fontStyle: 'italic' }]}>
+          Generic categories. Tap one — your specific brand is fine.
+        </Text>
+      </Card>
+      <Card>
+        <Label>Anything else (optional)</Label>
+        <TextInput
+          value={note}
+          onChangeText={onChangeNote}
+          placeholder="e.g. dose, taken with food"
+          placeholderTextColor={colors.cocoa2}
+          multiline
+          style={[styles.input, { marginTop: 10, backgroundColor: colors.fog }]}
+        />
       </Card>
     </View>
   );

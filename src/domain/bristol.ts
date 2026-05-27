@@ -52,3 +52,16 @@ export const COMMON_FOOD_TAGS = [
   'Fiber',
   'Sugar',
 ] as const;
+
+// Generic categories with the most common brand/molecule in parens, so one tap
+// is enough but the user recognises what each category covers. Brand names are
+// disambiguation aids only; the stored tag is this whole string so the
+// pattern engine can group consistently.
+export const COMMON_MEDS = [
+  'Anti-diarrhoeal (Loperamide)',
+  'Antispasmodic (Mebeverine / Buscopan)',
+  '5-ASA (Mesalazine)',
+  'Laxative (Movicol / Senna)',
+  'Probiotic',
+  'PPI (Omeprazole)',
+] as const;

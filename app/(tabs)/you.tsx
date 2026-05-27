@@ -2,7 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Button, Card, Label, Switch } from '@/components/ui';
+import { Button, Card, Label } from '@/components/ui';
 import articlesFile from '@/content/articles.json';
 import { loadDemoData } from '@/data/seed';
 import { useAppStore, type UserMode } from '@/data/store';
@@ -47,16 +47,12 @@ export default function You() {
           </Pressable>
         </Card>
 
-        <Card>
-          <Label>Privacy</Label>
-          <View style={{ gap: 14, marginTop: 10 }}>
-            <Row title="Biometric lock" sub="Face ID required to open" right={<Switch value={false} onChange={() => {}} />} />
-            <Row
-              title="Encrypted backup"
-              sub="Off (your choice)"
-              right={<Switch value={false} onChange={() => {}} />}
-            />
-          </View>
+        <Card onPress={() => router.push('/profile')}>
+          <Label>About you</Label>
+          <Text style={styles.cardHead}>Profile &amp; baseline →</Text>
+          <Text style={tokenType.sub}>
+            Age, diet, lifestyle, and the validated symptom score you can share with your doctor.
+          </Text>
         </Card>
 
         <Card tone="fog">
@@ -111,22 +107,10 @@ export default function You() {
   );
 }
 
-function Row({ title, sub, right }: { title: string; sub: string; right: React.ReactNode }) {
-  return (
-    <View style={styles.settingsRow}>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontWeight: '500', fontSize: 14, color: colors.cocoa }}>{title}</Text>
-        <Text style={[tokenType.sub, { fontSize: 12 }]}>{sub}</Text>
-      </View>
-      {right}
-    </View>
-  );
-}
-
 const MODE_OPTIONS: { mode: UserMode; label: string; sub: string }[] = [
-  { mode: 'exploring', label: "I'm figuring things out", sub: 'Default thresholds and copy.' },
-  { mode: 'appointment', label: 'I have an appointment coming up', sub: 'Surface the doctor PDF after 3 logs.' },
-  { mode: 'diagnosed', label: 'I was recently diagnosed', sub: 'Softer copy, looser pattern thresholds.' },
+  { mode: 'exploring', label: "I'm figuring things out", sub: "Take your time. We'll watch for patterns as you go." },
+  { mode: 'appointment', label: 'I have an appointment coming up', sub: 'Faster path to a doctor-ready report.' },
+  { mode: 'diagnosed', label: 'I was recently diagnosed', sub: 'Gentler pace while you find your footing.' },
 ];
 
 function ModePickerSheet({
@@ -231,7 +215,6 @@ const pickerStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingTop: 24, gap: spacing.md, paddingBottom: 120 },
   cardHead: { fontFamily: tokenType.section.fontFamily, fontSize: 18, marginVertical: 4, color: colors.cocoa },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   modeValue: { fontWeight: '500', fontSize: 14, color: colors.cocoa },
   modeChevron: { fontSize: 24, color: colors.cocoa2, marginLeft: 8 },

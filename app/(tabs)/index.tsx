@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, Chip, Chips, Label, Pill } from '@/components/ui';
 import { ContentTile } from '@/components/ContentTile';
 import { WeatherScene } from '@/components/WeatherScene';
+import { track } from '@/data/analytics';
 import { useAppStore } from '@/data/store';
 import { TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { patterns } from '@/domain/patterns';
@@ -14,6 +15,13 @@ export default function Today() {
   const logs = useAppStore((s) => s.logs);
   const startedAt = useAppStore((s) => s.startedAt);
   const userMode = useAppStore((s) => s.userMode);
+  const profile = useAppStore((s) => s.profile);
+  const softProfilePromptDismissed = useAppStore((s) => s.softProfilePromptDismissed);
+  const dismissSoftProfilePrompt = useAppStore((s) => s.dismissSoftProfilePrompt);
+  const hasAnyProfile = Boolean(
+    profile.age || profile.diet || profile.exercise || profile.sleep || profile.alcohol,
+  );
+  const showSoftPrompt = !hasAnyProfile && !softProfilePromptDismissed;
   const dayN = dayNumber(startedAt);
   const totalLogs = logs.length;
   const state = gutWeatherState(logs);
@@ -33,6 +41,38 @@ export default function Today() {
           <Text style={tokenType.title}>Hi.</Text>
           <Pill label={`Day ${dayN} · ${totalLogs} log${totalLogs === 1 ? '' : 's'}`} />
         </View>
+
+        {showSoftPrompt ? (
+          <Card>
+            <Label>Set your baseline</Label>
+            <Text style={[tokenType.sub, { marginTop: 6, color: colors.cocoa }]}>
+              90 seconds to share age, diet, and a quick symptom check. We&apos;ll fold the result
+              into your doctor PDF.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  track('soft_profile_prompt_accepted');
+                  router.push('/profile');
+                }}
+                style={({ pressed }) => [styles.softCta, pressed && { opacity: 0.85 }]}
+              >
+                <Text style={styles.softCtaText}>Get started</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  track('soft_profile_prompt_dismissed');
+                  dismissSoftProfilePrompt();
+                }}
+                style={({ pressed }) => [styles.softDismiss, pressed && { opacity: 0.6 }]}
+              >
+                <Text style={[tokenType.sub, { fontWeight: '500' }]}>Maybe later</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
 
         <Pressable
           accessibilityRole="button"
@@ -180,4 +220,13 @@ const styles = StyleSheet.create({
 
   bar: { height: 6, backgroundColor: colors.fog, borderRadius: radii.pill, overflow: 'hidden', marginTop: 10 },
   barFill: { height: '100%', backgroundColor: colors.sage, borderRadius: radii.pill },
+
+  softCta: {
+    backgroundColor: colors.cocoa,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: radii.pill,
+  },
+  softCtaText: { color: colors.cream, fontWeight: '600', fontSize: 13 },
+  softDismiss: { paddingVertical: 10, paddingHorizontal: 12 },
 });

@@ -1,4 +1,4 @@
-import type { Log, StoolLog, TriggerLog } from '@/data/types';
+import type { AlcoholFrequency, Log, Profile, StoolLog, TriggerLog } from '@/data/types';
 import type { UserMode } from '@/data/store';
 
 interface Thresholds {
@@ -57,6 +57,14 @@ export interface PatternsOutput {
   strongest?: Correlation;
   watching?: Correlation;
   frequencyTrend: FrequencyTrend;
+  alcoholWatch?: AlcoholWatch;
+}
+
+export interface AlcoholWatch {
+  declared: AlcoholFrequency;
+  flareDaysLast14: number;
+  flaresAfterAlcohol: number;
+  alcoholLogsLast14: number;
 }
 
 function describeAteSubject(trigger: TriggerLog): string {
@@ -155,7 +163,7 @@ function stressCorrelation(logs: Log[]): Correlation | null {
   };
 }
 
-export function patterns(logs: Log[], mode: UserMode = 'exploring'): PatternsOutput {
+export function patterns(logs: Log[], mode: UserMode = 'exploring', profile?: Profile): PatternsOutput {
   const t = THRESHOLDS[mode];
   const candidates: Correlation[] = [
     ...tagCorrelations(logs),
@@ -177,6 +185,28 @@ export function patterns(logs: Log[], mode: UserMode = 'exploring'): PatternsOut
     strongest,
     watching,
     frequencyTrend: frequencyTrend(logs),
+    alcoholWatch: alcoholWatch(logs, profile),
+  };
+}
+
+function alcoholWatch(logs: Log[], profile?: Profile): AlcoholWatch | undefined {
+  if (!profile?.alcohol || profile.alcohol === 'none' || profile.alcohol === 'occasional') return undefined;
+  const cutoff = Date.now() - 14 * 86400000;
+  const recentStools = logs.filter((l): l is StoolLog => l.type === 'stool' && l.ts >= cutoff);
+  const flares = recentStools.filter((s) => s.bristol >= 5);
+  if (flares.length < 3) return undefined;
+  const alcoholLogs = logs.filter(
+    (l) => l.ts >= cutoff && l.type === 'trigger' && (l as TriggerLog).tags.includes('Alcohol'),
+  );
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+  const flaresAfterAlcohol = flares.filter((f) =>
+    alcoholLogs.some((a) => a.ts < f.ts && f.ts - a.ts <= ONE_DAY),
+  ).length;
+  return {
+    declared: profile.alcohol,
+    flareDaysLast14: flares.length,
+    flaresAfterAlcohol,
+    alcoholLogsLast14: alcoholLogs.length,
   };
 }
 

@@ -31,6 +31,8 @@ interface AppState {
   profile: Profile;
   questionnaires: QuestionnaireResult[];
   activityRuns: ActivityRun[];
+  tipsDismissed: string[];
+  communityWaitlist: boolean;
 
   hydrate: () => Promise<void>;
   addLog: (log: NewLog) => Promise<Log>;
@@ -44,12 +46,14 @@ interface AppState {
   setProfileField: <K extends keyof Profile>(key: K, value: Profile[K]) => void;
   addQuestionnaireResult: (r: Omit<QuestionnaireResult, 'id'>) => Promise<void>;
   dismissSoftProfilePrompt: () => void;
+  dismissTip: (id: string) => void;
+  joinCommunityWaitlist: () => void;
   startActivity: (activity: ActivityId, initialPayload: ActivityPayload) => Promise<string>;
   updateActivity: (id: string, patch: Partial<Omit<ActivityRun, 'id' | 'activity'>>) => Promise<void>;
   completeActivity: (id: string, finalPayload: ActivityPayload) => Promise<void>;
 }
 
-const SETTINGS_KEY = 'osheet:settings:v2';
+const SETTINGS_KEY = 'osheet:settings:v3';
 
 interface PersistedSettings {
   onboarded: boolean;
@@ -57,6 +61,8 @@ interface PersistedSettings {
   startedAt: number;
   profile: Profile;
   softProfilePromptDismissed: boolean;
+  tipsDismissed: string[];
+  communityWaitlist: boolean;
 }
 
 function loadSettings(): PersistedSettings {
@@ -66,6 +72,8 @@ function loadSettings(): PersistedSettings {
     startedAt: Date.now(),
     profile: {},
     softProfilePromptDismissed: false,
+    tipsDismissed: [],
+    communityWaitlist: false,
   };
   if (typeof window === 'undefined' || !window.localStorage) return fallback;
   try {
@@ -78,6 +86,8 @@ function loadSettings(): PersistedSettings {
       startedAt: parsed.startedAt ?? Date.now(),
       profile: parsed.profile ?? {},
       softProfilePromptDismissed: parsed.softProfilePromptDismissed ?? false,
+      tipsDismissed: parsed.tipsDismissed ?? [],
+      communityWaitlist: parsed.communityWaitlist ?? false,
     };
   } catch {
     return fallback;
@@ -106,6 +116,8 @@ export const useAppStore = create<AppState>((set, get) => {
     profile: initial.profile,
     questionnaires: [],
     activityRuns: [],
+    tipsDismissed: initial.tipsDismissed,
+    communityWaitlist: initial.communityWaitlist,
 
     async hydrate() {
       const repo = getRepository();
@@ -189,6 +201,18 @@ export const useAppStore = create<AppState>((set, get) => {
       persistSettingsFromState(get());
     },
 
+    dismissTip(id) {
+      if (get().tipsDismissed.includes(id)) return;
+      set({ tipsDismissed: [...get().tipsDismissed, id] });
+      persistSettingsFromState(get());
+    },
+
+    joinCommunityWaitlist() {
+      if (get().communityWaitlist) return;
+      set({ communityWaitlist: true });
+      persistSettingsFromState(get());
+    },
+
     async startActivity(activity, initialPayload) {
       const run: ActivityRun = {
         id: `a_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
@@ -238,5 +262,7 @@ function persistSettingsFromState(s: AppState) {
     startedAt: s.startedAt,
     profile: s.profile,
     softProfilePromptDismissed: s.softProfilePromptDismissed,
+    tipsDismissed: s.tipsDismissed,
+    communityWaitlist: s.communityWaitlist,
   });
 }

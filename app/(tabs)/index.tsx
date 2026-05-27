@@ -2,9 +2,12 @@ import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, Chip, Chips, Label, Pill } from '@/components/ui';
 import { ContentTile } from '@/components/ContentTile';
+import { StoryTile } from '@/components/StoryTile';
+import { TipCard } from '@/components/TipCard';
 import { WeatherScene } from '@/components/WeatherScene';
 import { track } from '@/data/analytics';
 import { useAppStore } from '@/data/store';
+import { pickContextualTip } from '@/domain/tipSurfacing';
 import type { Log } from '@/data/types';
 import { TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { patterns } from '@/domain/patterns';
@@ -19,6 +22,8 @@ export default function Today() {
   const profile = useAppStore((s) => s.profile);
   const softProfilePromptDismissed = useAppStore((s) => s.softProfilePromptDismissed);
   const dismissSoftProfilePrompt = useAppStore((s) => s.dismissSoftProfilePrompt);
+  const tipsDismissed = useAppStore((s) => s.tipsDismissed);
+  const dismissTip = useAppStore((s) => s.dismissTip);
   const hasAnyProfile = Boolean(
     profile.age || profile.diet || profile.exercise || profile.sleep || profile.alcohol,
   );
@@ -36,6 +41,8 @@ export default function Today() {
   const headlineCorrelation = pat?.strongest ?? pat?.watching ?? null;
   const showDoctorTile = userMode === 'appointment' && totalLogs >= 3;
   const topTag = insightReady && !headlineCorrelation ? topLoggedTag(logs) : null;
+  // Contextual tip surfaced at most one at a time, gated by dismissed-set.
+  const contextualTip = pickContextualTip(logs, userMode, startedAt, new Set(tipsDismissed));
   // Footer of the hero card honestly matches what tapping it will do:
   // with a correlation → /insight; without → /timeline.
   const copy = weatherCopy(logs, {
@@ -112,6 +119,8 @@ export default function Today() {
           </View>
         </Pressable>
 
+        <StoryTile />
+
         <Card>
           <Label>Quick log</Label>
           <View style={{ marginTop: 12 }}>
@@ -160,6 +169,10 @@ export default function Today() {
               Generate a clinician-ready PDF from your last {totalLogs} entries.
             </Text>
           </Card>
+        ) : null}
+
+        {contextualTip ? (
+          <TipCard tip={contextualTip} onDismiss={() => dismissTip(contextualTip.id)} />
         ) : null}
 
         <ContentTile />

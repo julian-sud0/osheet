@@ -1,0 +1,78 @@
+{
+  "__schema": "{ id, category, title, body, source, url, surfacedWhen }",
+  "__note": "All URLs verified live as of authoring via WebSearch against the source's own canonical site. Bodies are descriptive synthesis from publicly available material on the linked source page — no prescriptive language, no claims about specific user outcomes. Re-verify URLs before each major release.",
+  "tips": [
+    {
+      "id": "bristol-6-7-meaning",
+      "category": "education",
+      "title": "What Type 6 or 7 stools tend to mean",
+      "body": "On the Bristol Stool Chart, Types 6 and 7 indicate loose or liquid stools — commonly associated with rapid transit through the gut, which can be triggered by infection, dietary irritants, or inflammation. Occasional looseness is normal; persistent looseness or a sustained change in form is the kind of pattern clinicians want to see described.",
+      "source": "Cleveland Clinic",
+      "url": "https://my.clevelandclinic.org/health/articles/bristol-stool-chart",
+      "surfacedWhen": ["type_7_logged", "type_6_logged"]
+    },
+    {
+      "id": "gut-brain-axis",
+      "category": "education",
+      "title": "The gut–brain connection",
+      "body": "Anger, anxiety, sadness, and elation can all trigger or amplify gut symptoms because the digestive tract is densely innervated and biochemically reactive to mood. The relationship runs both ways — gut signals also influence the brain. This is why stress and gut symptoms so often track together; both deserve attention, not just one.",
+      "source": "Harvard Health",
+      "url": "https://www.health.harvard.edu/diseases-and-conditions/the-gut-brain-connection",
+      "surfacedWhen": ["stress_trigger_week", "flare_week"]
+    },
+    {
+      "id": "ibs-symptoms-causes",
+      "category": "education",
+      "title": "What IBS is — and isn't",
+      "body": "Irritable bowel syndrome is characterised by recurrent abdominal pain, bloating, and changes in bowel habit, in the absence of structural disease. It is classified as a disorder of gut–brain interaction — the bidirectional signalling between the two is overactive. IBS is common, manageable, and not a precursor to more serious bowel disease.",
+      "source": "Mayo Clinic",
+      "url": "https://www.mayoclinic.org/diseases-conditions/irritable-bowel-syndrome/symptoms-causes/syc-20360016",
+      "surfacedWhen": ["pre_diagnosis", "exploring_14_days"]
+    },
+    {
+      "id": "colonoscopy-what-to-expect",
+      "category": "preparation",
+      "title": "What a colonoscopy actually involves",
+      "body": "A colonoscopy usually takes under an hour. You'll receive sedation through an IV, lie on a table, and the doctor will pass a flexible camera through the rectum and colon to examine the lining directly. The day before involves a bowel prep — drinking a solution that fully clears the colon. Recovery is typically same-day with a ride home arranged in advance.",
+      "source": "NIDDK (NIH)",
+      "url": "https://www.niddk.nih.gov/health-information/diagnostic-tests/colonoscopy",
+      "surfacedWhen": ["pre_diagnosis", "appointment_mode"]
+    },
+    {
+      "id": "low-fodmap-overview",
+      "category": "education",
+      "title": "What the low-FODMAP framework is",
+      "body": "Low-FODMAP is a structured elimination–reintroduction protocol developed at Monash University. About 50–80% of people with IBS respond to a full clinically supervised trial. It works in three phases — restriction, systematic reintroduction, and personalisation — and is typically run with a dietitian rather than self-attempted long-term, because long-term restriction can affect gut microbiota composition.",
+      "source": "Monash University",
+      "url": "https://www.monashfodmap.com/about-fodmap-and-ibs/research-monash-university/",
+      "surfacedWhen": ["food_correlations_watched", "diet_lowfodmap"]
+    },
+    {
+      "id": "blood-in-stool-context",
+      "category": "education",
+      "title": "What blood in stool can mean",
+      "body": "Bright red blood typically originates from the lower colon, rectum, or anus and is commonly explained by hemorrhoids or anal fissures. Darker or maroon blood, or black tarry stools, can indicate bleeding higher up in the GI tract and warrants prompt medical review. Any persistent or recurrent bleeding is worth raising with your doctor — it's a symptom clinicians specifically want to hear about.",
+      "source": "Cleveland Clinic",
+      "url": "https://my.clevelandclinic.org/health/symptoms/14612-rectal-bleeding",
+      "surfacedWhen": ["blood_logged"]
+    },
+    {
+      "id": "when-to-see-gi",
+      "category": "care_nav",
+      "title": "When chronic gut symptoms warrant a doctor visit",
+      "body": "Symptoms lasting more than two days without improvement are worth a primary-care visit. Chronic diarrhoea (lasting more than four weeks), persistent weight loss, blood in stool, or recurring night-time symptoms are flags clinicians specifically want to hear about. A few weeks of logs makes the conversation much sharper.",
+      "source": "Mayo Clinic",
+      "url": "https://www.mayoclinic.org/symptoms/diarrhea/basics/when-to-see-doctor/sym-20050926",
+      "surfacedWhen": ["pre_diagnosis", "exploring_14_days"]
+    },
+    {
+      "id": "diet-fiber-fodmap-niddk",
+      "category": "education",
+      "title": "How diet typically gets approached in IBS",
+      "body": "The standard sequence is: try increasing fibre (especially soluble fibre, which softens stool); identify specific food triggers via a diary; and if symptoms persist, work with a dietitian on a structured low-FODMAP trial. Changes typically need several weeks to evaluate. There isn't a single 'IBS diet' — what works varies considerably between people.",
+      "source": "NIDDK (NIH)",
+      "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/irritable-bowel-syndrome/eating-diet-nutrition",
+      "surfacedWhen": ["exploring_14_days", "diet_attempting"]
+    }
+  ]
+}

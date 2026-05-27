@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -30,6 +31,7 @@ const RADIUS = 110; // distance from main FAB centre to child centre
 
 export function RadialFab() {
   const open = useSharedValue(0); // 0 = closed, 1 = open
+  const [isOpen, setIsOpen] = useState(false); // JS mirror for pointer-events gating
 
   const actions: Action[] = [
     {
@@ -75,18 +77,19 @@ export function RadialFab() {
   const angles = [15, 40, 65, 90]; // stool, food, meds, stress
 
   const toggle = () => {
-    const next = open.value === 0 ? 1 : 0;
-    open.value = withSpring(next, { damping: 14, stiffness: 160 });
-    if (next === 1) track('fab_opened');
+    const next = !isOpen;
+    setIsOpen(next);
+    open.value = withSpring(next ? 1 : 0, { damping: 14, stiffness: 160 });
+    if (next) track('fab_opened');
   };
 
   const close = () => {
+    setIsOpen(false);
     open.value = withSpring(0, { damping: 14, stiffness: 160 });
   };
 
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: open.value * 0.32,
-    pointerEvents: open.value > 0.1 ? ('auto' as const) : ('none' as const),
   }));
 
   const plusStyle = useAnimatedStyle(() => ({
@@ -95,15 +98,21 @@ export function RadialFab() {
 
   return (
     <>
-      <Animated.View style={[styles.backdrop, backdropStyle]} pointerEvents="auto">
-        <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close menu" />
-      </Animated.View>
+      {/* Backdrop is only mounted when the menu is open, so it can't intercept
+          taps when closed. Critical: an absolutely positioned backdrop with
+          pointerEvents="auto" sitting over every tab would eat everything. */}
+      {isOpen ? (
+        <Animated.View style={[styles.backdrop, backdropStyle]} pointerEvents="auto">
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close menu" />
+        </Animated.View>
+      ) : null}
 
       {actions.map((a, i) => (
         <ChildFab
           key={a.id}
           angleDeg={angles[i]}
           open={open}
+          isOpen={isOpen}
           icon={a.icon}
           label={a.label}
           onPress={() => {
@@ -135,12 +144,14 @@ export function RadialFab() {
 function ChildFab({
   angleDeg,
   open,
+  isOpen,
   icon,
   label,
   onPress,
 }: {
   angleDeg: number;
   open: Animated.SharedValue<number>;
+  isOpen: boolean;
   icon: Action['icon'];
   label: string;
   onPress: () => void;
@@ -155,7 +166,6 @@ function ChildFab({
     return {
       transform: [{ translateX: dx * t }, { translateY: dy * t }, { scale: 0.4 + t * 0.6 }],
       opacity: t,
-      pointerEvents: t > 0.1 ? ('auto' as const) : ('none' as const),
     };
   });
 
@@ -163,8 +173,14 @@ function ChildFab({
     opacity: withTiming(open.value, { duration: 180 }),
   }));
 
+  // Children stay mounted so the close animation can play. When closed
+  // they sit invisibly at the main FAB's coordinates only (not covering the
+  // rest of the screen) — pointerEvents toggled via prop based on isOpen.
   return (
-    <Animated.View style={[styles.childWrap, childStyle]} pointerEvents="auto">
+    <Animated.View
+      style={[styles.childWrap, childStyle]}
+      pointerEvents={isOpen ? 'auto' : 'none'}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Log ${label}`}

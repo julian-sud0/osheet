@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, Label, Pill, Seg } from '@/components/ui';
 import { useAppStore } from '@/data/store';
-import { patterns, type Correlation } from '@/domain/patterns';
+import { hypothesesBelowThreshold, patterns, type Correlation } from '@/domain/patterns';
 import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function PatternsScreen() {
@@ -37,7 +37,9 @@ export default function PatternsScreen() {
         <>
           {result.strongest ? <CorrelationCard correlation={result.strongest} headline="Strongest link" /> : null}
           {result.watching ? <CorrelationCard correlation={result.watching} headline="Watching" muted /> : null}
-          {!result.strongest && !result.watching ? <EmptyState count={logs.length} hint="Not enough signal yet — keep logging." /> : null}
+          {!result.strongest && !result.watching ? (
+            <StillWatchingPanel hypotheses={hypothesesBelowThreshold(logs)} />
+          ) : null}
 
           {result.alcoholWatch ? (
             <Card>
@@ -93,6 +95,49 @@ function CorrelationCard({
         <View style={[styles.barFill, { width: `${pct}%`, backgroundColor: muted ? colors.sage : colors.terra }]} />
       </View>
     </Card>
+  );
+}
+
+function StillWatchingPanel({ hypotheses }: { hypotheses: Correlation[] }) {
+  return (
+    <>
+      <Card>
+        <Label>Still watching</Label>
+        <Text style={styles.corHead}>Real patterns need a few flare days alongside the triggers.</Text>
+        <Text style={tokenType.sub}>
+          We&apos;re tracking the candidates below. None has cleared the confidence threshold yet —
+          keep logging when you eat or feel something distinctive.
+        </Text>
+      </Card>
+
+      {hypotheses.length > 0 ? (
+        <Card tone="fog">
+          <Label>What we&apos;re watching</Label>
+          <View style={{ gap: 10, marginTop: 10 }}>
+            {hypotheses.map((h) => {
+              const remaining = Math.max(0, 3 - h.hits);
+              return (
+                <View key={h.id} style={{ gap: 4 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontWeight: '600', fontSize: 14, color: colors.cocoa, flex: 1 }} numberOfLines={1}>
+                      {h.triggerLabel} → {h.outcomeLabel}
+                    </Text>
+                    <Text style={[tokenType.sub, { fontSize: 12, marginLeft: 8 }]}>
+                      {h.hits} / {h.n}
+                    </Text>
+                  </View>
+                  <Text style={[tokenType.sub, { fontSize: 12 }]}>
+                    {remaining > 0
+                      ? `${remaining} more matching ${remaining === 1 ? 'event' : 'events'} would clear the threshold.`
+                      : "Strong ratio — we'd need more occurrences before calling it."}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      ) : null}
+    </>
   );
 }
 

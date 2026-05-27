@@ -72,13 +72,17 @@ const ONE_WEEK_MS = 7 * 86400000;
 
 export function weatherCopy(
   logs: Log[],
-  opts: { mode?: UserMode; startedAt?: number } = {},
+  opts: { mode?: UserMode; startedAt?: number; hasCorrelation?: boolean } = {},
 ): WeatherCopy {
   const state = gutWeatherState(logs);
   const stoolCount = logs.filter((l) => l.type === 'stool').length;
   const mode = opts.mode ?? 'exploring';
   const inEarlyDiagnosedWindow =
     mode === 'diagnosed' && opts.startedAt !== undefined && Date.now() - opts.startedAt < ONE_WEEK_MS;
+  // Footer copy must honestly match what tapping the card does. If we have a
+  // correlation to show, route promises "the pattern"; otherwise the
+  // footer says "timeline" — never the other way around.
+  const tapFooter = opts.hasCorrelation ? 'tap to see the pattern' : 'tap for the timeline';
 
   if (stoolCount === 0) {
     return {
@@ -88,13 +92,11 @@ export function weatherCopy(
     };
   }
 
-  // Diagnosed mode: hold space for the early-week noise rather than calling it
-  // a flare. The data is real, but the narrative would be premature.
   if (inEarlyDiagnosedWindow && state !== 'calm') {
     return {
       title: 'Still settling in.',
       em: 'Early days are noisy by nature.',
-      footer: `${stoolCount} entries · tap for the timeline`,
+      footer: `${stoolCount} entries · ${tapFooter}`,
     };
   }
 
@@ -110,7 +112,7 @@ export function weatherCopy(
     return {
       title: 'A mixed few days.',
       em: 'Some flare, some calm.',
-      footer: `${stoolCount} entries · tap for the timeline`,
+      footer: `${stoolCount} entries · ${tapFooter}`,
     };
   }
 
@@ -118,6 +120,6 @@ export function weatherCopy(
   return {
     title: 'Choppy lately.',
     em: tag ? `${tag} seems to land hard.` : 'A rough stretch.',
-    footer: `${stoolCount} entries · tap to see the pattern`,
+    footer: `${stoolCount} entries · ${tapFooter}`,
   };
 }

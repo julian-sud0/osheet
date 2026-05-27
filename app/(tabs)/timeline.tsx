@@ -44,6 +44,9 @@ export default function Timeline() {
           grouped.map((g) => (
             <View key={g.label} style={{ gap: spacing.sm }}>
               <Text style={styles.dayLabel}>{g.label}</Text>
+              {g.logs.length >= 2 ? (
+                <Text style={styles.daySummary}>{summariseDay(g.logs)}</Text>
+              ) : null}
               {g.logs.map((l) => (
                 <Row key={l.id} log={l} onLongPress={() => setActionTarget(l)} />
               ))}
@@ -55,6 +58,24 @@ export default function Timeline() {
       <RowActionsSheet
         visible={actionTarget !== null}
         title={actionTarget ? describeLog(actionTarget) : ''}
+        onEdit={
+          actionTarget
+            ? () => {
+                const target = actionTarget;
+                if (target.type === 'stool') {
+                  router.push({
+                    pathname: '/log/stool-details',
+                    params: { bristol: String(target.bristol), edit: target.id },
+                  });
+                } else {
+                  router.push({
+                    pathname: '/log/trigger',
+                    params: { kind: target.subtype, edit: target.id },
+                  });
+                }
+              }
+            : undefined
+        }
         onDelete={
           actionTarget
             ? () => {
@@ -73,6 +94,49 @@ function describeLog(log: Log): string {
     return `${bristolByType(log.bristol).name} · ${formatTime(log.ts)}`;
   }
   return `${TRIGGER_TYPES[log.subtype].label} · ${formatTime(log.ts)}`;
+}
+
+/**
+ * Descriptive one-line summary for a day. Counts stools (with modal Bristol
+ * type), counts trigger subtypes, and surfaces up to 2 food tags. No
+ * inference, no claims — just glanceable counts.
+ */
+function summariseDay(logs: Log[]): string {
+  const stools = logs.filter((l): l is StoolLog => l.type === 'stool');
+  const triggers = logs.filter((l): l is TriggerLog => l.type === 'trigger');
+  const meds = triggers.filter((t) => t.subtype === 'med').length;
+  const ate = triggers.filter((t) => t.subtype === 'ate').length;
+  const stress = triggers.filter((t) => t.subtype === 'stress').length;
+  const sleep = triggers.filter((t) => t.subtype === 'sleep').length;
+
+  const parts: string[] = [];
+  if (stools.length > 0) {
+    const modal = modalBristol(stools);
+    parts.push(
+      `${stools.length} stool${stools.length === 1 ? '' : 's'}${modal ? ` (Type ${modal} avg)` : ''}`,
+    );
+  }
+  if (meds > 0) parts.push(`${meds} med${meds === 1 ? '' : 's'}`);
+  if (ate > 0) {
+    const allTags = triggers
+      .filter((t) => t.subtype === 'ate')
+      .flatMap((t) => t.tags)
+      .slice(0, 2);
+    parts.push(allTags.length > 0 ? allTags.join(' & ').toLowerCase() : `${ate} meal${ate === 1 ? '' : 's'}`);
+  }
+  if (stress > 0) parts.push(`${stress} stress`);
+  if (sleep > 0) parts.push(`${sleep} sleep`);
+  return parts.join(' · ');
+}
+
+function modalBristol(stools: StoolLog[]): number | null {
+  const counts = new Map<number, number>();
+  for (const s of stools) counts.set(s.bristol, (counts.get(s.bristol) ?? 0) + 1);
+  let best: { type: number; n: number } | null = null;
+  for (const [type, n] of counts.entries()) {
+    if (!best || n > best.n) best = { type, n };
+  }
+  return best?.type ?? null;
 }
 
 function Row({ log, onLongPress }: { log: Log; onLongPress: () => void }) {
@@ -140,6 +204,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   empty: { backgroundColor: colors.fog, borderRadius: radii.md, padding: 16 },
   dayLabel: { fontFamily: tokenType.section.fontFamily, fontSize: 14, color: colors.cocoa2, paddingHorizontal: 4, marginTop: 4 },
+  daySummary: { fontSize: 12, color: colors.cocoa2, paddingHorizontal: 4, marginTop: -2, fontStyle: 'italic' },
   row: {
     backgroundColor: '#fff',
     borderRadius: radii.md,

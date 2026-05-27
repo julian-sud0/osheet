@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, TopBar } from '@/components/ui';
+import { PostLogSheet } from '@/components/PostLogSheet';
 import { TimestampToggle } from '@/components/TimestampToggle';
 import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
@@ -15,20 +16,31 @@ const PAIN: Pain[] = ['None', 'Mild', 'Moderate', 'Sharp'];
 const EXTRAS: Exclude<StoolExtra, 'Photo'>[] = ['Blood', 'Mucus', 'Felt incomplete'];
 
 export default function StoolDetailsScreen() {
-  const params = useLocalSearchParams<{ bristol?: string }>();
+  const params = useLocalSearchParams<{ bristol?: string; edit?: string }>();
   const bristol = (Number(params.bristol) || 4) as BristolType;
   const entry = bristolByType(bristol);
+  const editId = typeof params.edit === 'string' ? params.edit : undefined;
+  const editingLog = useAppStore((s) =>
+    editId ? s.logs.find((l) => l.id === editId && l.type === 'stool') : undefined,
+  );
 
   const addLog = useAppStore((s) => s.addLog);
+  const updateLog = useAppStore((s) => s.updateLog);
   const bloodAlertShown = useAppStore((s) => s.bloodAlertShownThisSession);
   const markBloodAlertShown = useAppStore((s) => s.markBloodAlertShown);
 
-  const [urgency, setUrgency] = useState<Urgency | null>(null);
-  const [pain, setPain] = useState<Pain | null>(null);
-  const [extras, setExtras] = useState<Exclude<StoolExtra, 'Photo'>[]>([]);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const editing = editingLog && editingLog.type === 'stool' ? editingLog : null;
+  const [urgency, setUrgency] = useState<Urgency | null>(editing?.urgency ?? null);
+  const [pain, setPain] = useState<Pain | null>(editing?.pain ?? null);
+  const [extras, setExtras] = useState<Exclude<StoolExtra, 'Photo'>[]>(
+    editing
+      ? (editing.extras.filter((e) => e !== 'Photo') as Exclude<StoolExtra, 'Photo'>[])
+      : [],
+  );
+  const [photoUri, setPhotoUri] = useState<string | null>(editing?.photoUri ?? null);
   const [showBloodAlert, setShowBloodAlert] = useState(false);
-  const [eventTs, setEventTs] = useState<number>(() => Date.now());
+  const [eventTs, setEventTs] = useState<number>(() => editing?.ts ?? Date.now());
+  const [postLogVisible, setPostLogVisible] = useState(false);
 
   const toggleExtra = (e: Exclude<StoolExtra, 'Photo'>) => {
     const wasOn = extras.includes(e);
@@ -47,16 +59,28 @@ export default function StoolDetailsScreen() {
 
   const finish = async () => {
     const finalExtras: StoolExtra[] = photoUri ? [...extras, 'Photo'] : [...extras];
-    await addLog({
-      type: 'stool',
-      bristol,
-      urgency,
-      pain,
-      extras: finalExtras,
-      photoUri: photoUri ?? undefined,
-      ts: eventTs,
-    });
-    router.replace('/(tabs)');
+    if (editing) {
+      await updateLog(editing.id, {
+        bristol,
+        urgency,
+        pain,
+        extras: finalExtras,
+        photoUri: photoUri ?? undefined,
+        ts: eventTs,
+      });
+      router.replace('/(tabs)/timeline');
+    } else {
+      await addLog({
+        type: 'stool',
+        bristol,
+        urgency,
+        pain,
+        extras: finalExtras,
+        photoUri: photoUri ?? undefined,
+        ts: eventTs,
+      });
+      setPostLogVisible(true);
+    }
   };
 
   const labelMemo = useMemo(() => `${entry.name} · just now`, [entry.name]);
@@ -151,6 +175,13 @@ export default function StoolDetailsScreen() {
           <Button label="Skip — already saved" variant="text" onPress={finish} />
         </View>
       </ScrollView>
+
+      <PostLogSheet
+        visible={postLogVisible}
+        label={`${entry.name} · saved to today`}
+        onDone={() => router.replace('/(tabs)')}
+        onLogAnother={() => router.replace('/log/bristol')}
+      />
     </View>
   );
 }

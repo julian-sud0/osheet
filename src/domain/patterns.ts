@@ -210,6 +210,25 @@ function alcoholWatch(logs: Log[], profile?: Profile): AlcoholWatch | undefined 
   };
 }
 
+/**
+ * Returns the top trigger tags being observed even when none has cleared the
+ * strongest/watching thresholds yet. Used by the "Still watching" surface
+ * on Patterns to honour the user's contribution before a real pattern emerges.
+ */
+export function hypothesesBelowThreshold(logs: Log[], maxCount = 3): Correlation[] {
+  const candidates = [
+    ...tagCorrelations(logs),
+    ...(stressCorrelation(logs) ? [stressCorrelation(logs)!] : []),
+  ];
+  // Already filtered above threshold? show those last. Surface tags with
+  // some hits first, then most-frequent tags.
+  candidates.sort((a, b) => {
+    if (b.hits !== a.hits) return b.hits - a.hits;
+    return b.n - a.n;
+  });
+  return candidates.slice(0, maxCount);
+}
+
 export function findCorrelationById(logs: Log[], id: string, mode: UserMode = 'exploring'): Correlation | undefined {
   const { strongest, watching } = patterns(logs, mode);
   if (strongest?.id === id) return strongest;

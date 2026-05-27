@@ -26,7 +26,8 @@ export default function Today() {
   const dayN = dayNumber(startedAt);
   const totalLogs = logs.length;
   const state = gutWeatherState(logs);
-  const copy = weatherCopy(logs, { mode: userMode, startedAt });
+  // Lifted compute order: derive pattern result first so the weatherCopy
+  // footer can honestly match what tapping the hero card will do.
   // `appointment` users get the first-pattern contract loosened — they don't have
   // time to wait for 5 logs before the product proves itself useful.
   const need = userMode === 'appointment' ? 3 : 5;
@@ -35,6 +36,13 @@ export default function Today() {
   const headlineCorrelation = pat?.strongest ?? pat?.watching ?? null;
   const showDoctorTile = userMode === 'appointment' && totalLogs >= 3;
   const topTag = insightReady && !headlineCorrelation ? topLoggedTag(logs) : null;
+  // Footer of the hero card honestly matches what tapping it will do:
+  // with a correlation → /insight; without → /timeline.
+  const copy = weatherCopy(logs, {
+    mode: userMode,
+    startedAt,
+    hasCorrelation: !!headlineCorrelation,
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.cream }}>
@@ -78,8 +86,17 @@ export default function Today() {
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open timeline"
-          onPress={() => router.push('/(tabs)/timeline')}
+          accessibilityLabel={headlineCorrelation ? 'Open pattern detail' : 'Open timeline'}
+          onPress={() => {
+            // Honest routing: if we have something to surface, take the user
+            // to the pattern detail. Otherwise the timeline is the right
+            // destination — and the footer copy below should match.
+            if (headlineCorrelation) {
+              router.push({ pathname: '/insight/[id]', params: { id: headlineCorrelation.id } });
+            } else {
+              router.push('/(tabs)/timeline');
+            }
+          }}
           style={[styles.weather, weatherTone(state)]}
         >
           <View style={StyleSheet.absoluteFill}>

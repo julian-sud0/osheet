@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button, Card, Chip, Chips, Label, SavedBanner, Seg, TopBar } from '@/components/ui';
+import { PostLogSheet } from '@/components/PostLogSheet';
 import { TimestampToggle } from '@/components/TimestampToggle';
 import { capturePhoto } from '@/data/photos';
 import { useAppStore } from '@/data/store';
@@ -9,22 +10,29 @@ import { COMMON_FOOD_TAGS, COMMON_MEDS, TRIGGER_TYPES, type TriggerKey } from '@
 import { colors, radii, spacing, type as tokenType } from '@/theme/tokens';
 
 export default function TriggerScreen() {
-  const { kind } = useLocalSearchParams<{ kind?: TriggerKey }>();
+  const { kind, edit } = useLocalSearchParams<{ kind?: TriggerKey; edit?: string }>();
   const trigger = kind ? TRIGGER_TYPES[kind] : null;
+  const editId = typeof edit === 'string' ? edit : undefined;
+  const editing = useAppStore((s) =>
+    editId ? s.logs.find((l) => l.id === editId && l.type === 'trigger') : undefined,
+  );
   const addLog = useAppStore((s) => s.addLog);
   const updateLog = useAppStore((s) => s.updateLog);
 
-  const [tags, setTags] = useState<string[]>([]);
+  const editingTrigger = editing && editing.type === 'trigger' ? editing : null;
+  const [tags, setTags] = useState<string[]>(editingTrigger?.tags ?? []);
   const [detailMode, setDetailMode] = useState<'photo' | 'words'>('photo');
-  const [note, setNote] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [eventTs, setEventTs] = useState<number>(() => Date.now());
-  const draftIdRef = useRef<string | null>(null);
+  const [note, setNote] = useState(editingTrigger?.note ?? '');
+  const [photoUri, setPhotoUri] = useState<string | null>(editingTrigger?.photoUri ?? null);
+  const [eventTs, setEventTs] = useState<number>(() => editingTrigger?.ts ?? Date.now());
+  const [postLogVisible, setPostLogVisible] = useState(false);
+  const draftIdRef = useRef<string | null>(editingTrigger ? editingTrigger.id : null);
 
   // Lock the timestamp the moment the screen mounts — even if the user never
   // taps Done, they've at least recorded WHEN it happened.
   useEffect(() => {
-    if (!kind) return;
+    // When editing, we already have an entry to update — don't create a new draft.
+    if (!kind || editingTrigger) return;
     (async () => {
       const created = await addLog({
         type: 'trigger',
@@ -64,7 +72,13 @@ export default function TriggerScreen() {
         ts: eventTs,
       });
     }
-    router.replace('/(tabs)');
+    if (editingTrigger) {
+      router.replace('/(tabs)/timeline');
+    } else if (later) {
+      router.replace('/(tabs)');
+    } else {
+      setPostLogVisible(true);
+    }
   };
 
   return (
@@ -103,6 +117,13 @@ export default function TriggerScreen() {
           <Button label="Finish this later" variant="text" onPress={() => finish(true)} />
         </View>
       </ScrollView>
+
+      <PostLogSheet
+        visible={postLogVisible}
+        label={`${trigger.label} · saved to today`}
+        onDone={() => router.replace('/(tabs)')}
+        onLogAnother={() => router.replace('/log/bristol')}
+      />
     </View>
   );
 }

@@ -91,7 +91,7 @@ export default function PDFPreview() {
             ),
           )}
           {!result.strongest && !result.watching ? (
-            <Text style={[styles.meta, { marginTop: 6 }]}>No correlations cleared the threshold in this range.</Text>
+            <Text style={[styles.meta, { marginTop: 6 }]}>No correlation was strong enough to call a pattern in this range.</Text>
           ) : null}
 
           <Text style={styles.section}>Frequency</Text>

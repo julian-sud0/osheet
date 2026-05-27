@@ -206,6 +206,8 @@ function ActiveTrial({
 
   const [avoided, setAvoided] = useState<boolean | null>(todayCheckIn?.avoided ?? null);
   const [feeling, setFeeling] = useState<number | null>(todayCheckIn?.feelingScore ?? null);
+  // Brief acknowledgement flash so the user sees the submit actually fired.
+  const [justSaved, setJustSaved] = useState(false);
 
   const submitCheckIn = async () => {
     if (avoided === null || feeling === null) return;
@@ -218,6 +220,8 @@ function ActiveTrial({
     const nextPayload: SelfTrialPayload = { ...payload, dailyCheckIns: nextCheckIns };
     track('activity_step_completed', { activity: 'self-trial', day: dayN });
     await update(run.id, { payload: nextPayload });
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 1400);
   };
 
   const finishTrial = async () => {
@@ -313,7 +317,13 @@ function ActiveTrial({
         </Card>
 
         <Button
-          label={todayCheckIn ? 'Update today&apos;s check-in' : 'Save today&apos;s check-in'}
+          label={
+            justSaved
+              ? 'Saved ✓'
+              : todayCheckIn
+              ? "Update today's check-in"
+              : "Save today's check-in"
+          }
           variant="sage"
           disabled={avoided === null || feeling === null}
           onPress={submitCheckIn}

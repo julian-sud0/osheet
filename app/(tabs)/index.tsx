@@ -1,13 +1,11 @@
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, Chip, Chips, Label, Pill } from '@/components/ui';
-import { ContentTile } from '@/components/ContentTile';
-import { StoryTile } from '@/components/StoryTile';
-import { TipCard } from '@/components/TipCard';
+import { ContentFeed } from '@/components/ContentFeed';
+import { ThingsToTryAnchor } from '@/components/ThingsToTryAnchor';
 import { WeatherScene } from '@/components/WeatherScene';
 import { track } from '@/data/analytics';
 import { useAppStore } from '@/data/store';
-import { pickContextualTip } from '@/domain/tipSurfacing';
 import type { Log } from '@/data/types';
 import { TRIGGER_TYPES, type TriggerKey } from '@/domain/bristol';
 import { patterns } from '@/domain/patterns';
@@ -22,8 +20,6 @@ export default function Today() {
   const profile = useAppStore((s) => s.profile);
   const softProfilePromptDismissed = useAppStore((s) => s.softProfilePromptDismissed);
   const dismissSoftProfilePrompt = useAppStore((s) => s.dismissSoftProfilePrompt);
-  const tipsDismissed = useAppStore((s) => s.tipsDismissed);
-  const dismissTip = useAppStore((s) => s.dismissTip);
   const hasAnyProfile = Boolean(
     profile.age || profile.diet || profile.exercise || profile.sleep || profile.alcohol,
   );
@@ -41,8 +37,6 @@ export default function Today() {
   const headlineCorrelation = pat?.strongest ?? pat?.watching ?? null;
   const showDoctorTile = userMode === 'appointment' && totalLogs >= 3;
   const topTag = insightReady && !headlineCorrelation ? topLoggedTag(logs) : null;
-  // Contextual tip surfaced at most one at a time, gated by dismissed-set.
-  const contextualTip = pickContextualTip(logs, userMode, startedAt, new Set(tipsDismissed));
   // Footer of the hero card honestly matches what tapping it will do:
   // with a correlation → /insight; without → /timeline.
   const copy = weatherCopy(logs, {
@@ -119,8 +113,6 @@ export default function Today() {
           </View>
         </Pressable>
 
-        <StoryTile />
-
         <Card>
           <Label>Quick log</Label>
           <View style={{ marginTop: 12 }}>
@@ -137,6 +129,8 @@ export default function Today() {
             </Chips>
           </View>
         </Card>
+
+        <ThingsToTryAnchor />
 
         {insightReady && headlineCorrelation ? (
           <Card onPress={() => router.push({ pathname: '/insight/[id]', params: { id: headlineCorrelation.id } })}>
@@ -171,11 +165,7 @@ export default function Today() {
           </Card>
         ) : null}
 
-        {contextualTip ? (
-          <TipCard tip={contextualTip} onDismiss={() => dismissTip(contextualTip.id)} />
-        ) : null}
-
-        <ContentTile />
+        <ContentFeed />
       </ScrollView>
     </View>
   );
@@ -190,19 +180,19 @@ function StillWatchingCard({
 }) {
   return (
     <Card tone="fog">
-      <Label>Still watching</Label>
+      <Label>We're watching with you</Label>
       <Text style={{ fontFamily: tokenType.section.fontFamily, fontSize: 16, marginVertical: 8 }}>
         {topTag
-          ? `Most-logged so far: ${topTag.tag} · ${topTag.count}×`
+          ? `${topTag.tag} shows up most so far — ${topTag.count} ${topTag.count === 1 ? 'entry' : 'entries'}.`
           : 'You have stool data but no triggers yet.'}
       </Text>
       <Text style={[tokenType.sub, { fontSize: 13 }]}>
         {topTag
-          ? "A real pattern needs a few flare days alongside the triggers before it surfaces. Keep logging when you eat or feel something distinctive."
-          : 'Quick-log a meal or stress event to unlock connections.'}
+          ? 'A real pattern needs a few rough days alongside the triggers before it shows up clearly. Keep noting what stands out — meals, stress, anything distinctive.'
+          : 'Quick-log a meal or stress event so we can start spotting connections.'}
       </Text>
       <Text style={[tokenType.sub, { fontSize: 12, marginTop: 8, fontStyle: 'italic' }]}>
-        Averaging {freqPerDay} log{freqPerDay === 1 ? '' : 's'} per day this week.
+        About {freqPerDay} log{freqPerDay === 1 ? '' : 's'} a day this week — a steady rhythm.
       </Text>
     </Card>
   );

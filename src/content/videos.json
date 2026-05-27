@@ -1,0 +1,5 @@
+{
+  "__schema": "{ id, title, blurb, source, url, durationSec, tags[] }",
+  "__note": "Reserved for future video items from credible sources (Mayo, Cleveland Clinic, Crohn's foundations all have YouTube channels with patient-story videos). When real items land here, the ContentFeed picks them up automatically without code changes. URL discipline: verified canonical links only, same rule as articles and stories.",
+  "videos": []
+}

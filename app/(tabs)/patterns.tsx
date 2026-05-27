@@ -102,11 +102,12 @@ function StillWatchingPanel({ hypotheses }: { hypotheses: Correlation[] }) {
   return (
     <>
       <Card>
-        <Label>Still watching</Label>
-        <Text style={styles.corHead}>Real patterns need a few flare days alongside the triggers.</Text>
+        <Label>We're watching with you</Label>
+        <Text style={styles.corHead}>Real patterns need a few rough days alongside the triggers.</Text>
         <Text style={tokenType.sub}>
-          We&apos;re tracking the candidates below. None has cleared the confidence threshold yet —
-          keep logging when you eat or feel something distinctive.
+          The candidates below are what we&apos;re keeping an eye on. None of them are clear enough
+          to call a pattern yet — keep noting what stands out, especially the meals or moments
+          that feel different.
         </Text>
       </Card>
 
@@ -128,8 +129,8 @@ function StillWatchingPanel({ hypotheses }: { hypotheses: Correlation[] }) {
                   </View>
                   <Text style={[tokenType.sub, { fontSize: 12 }]}>
                     {remaining > 0
-                      ? `${remaining} more matching ${remaining === 1 ? 'event' : 'events'} would clear the threshold.`
-                      : "Strong ratio — we'd need more occurrences before calling it."}
+                      ? `${remaining === 1 ? 'One more time' : `${remaining} more times`} like this and we'll call it a pattern.`
+                      : "Strong ratio — a few more days like this and we'll be confident."}
                   </Text>
                 </View>
               );

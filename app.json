@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "osheet",
+    "slug": "osheet",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "osheet",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#F6F1E8",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.osheet.app"
+    },
+    "android": {
+      "package": "com.osheet.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F6F1E8"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/osheet"
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "__schema": "{ id, who, condition, blurb (third-person description), source, url, tags }",
+  "__note": "These stories live at the verified URLs on the source's own site. Blurbs are short third-person descriptions of what the published story covers — NOT fabricated first-person quotes. Users tap through to read the real account in the patient's own voice. Re-verify URLs before each major release.",
+  "stories": [
+    {
+      "id": "ccf-laura-jane",
+      "who": "Laura Jane",
+      "condition": "Ulcerative colitis",
+      "blurb": "After trying several medications and experiencing steroid side effects, Laura Jane combined a biologic treatment with diet and lifestyle changes to reach remission. Her story is a measured account of cycling through options before finding what worked.",
+      "source": "Crohn's & Colitis Foundation",
+      "url": "https://www.crohnscolitisfoundation.org/laura-janes-story",
+      "tags": ["ibd", "remission", "medication-journey"]
+    },
+    {
+      "id": "ccf-robert",
+      "who": "Robert",
+      "condition": "Crohn's disease",
+      "blurb": "A patient advocate from Massachusetts who fought his insurance company's step-therapy mandate. His account focuses on the administrative weight of chronic illness — the part that doesn't get talked about.",
+      "source": "Crohn's & Colitis Foundation",
+      "url": "https://www.crohnscolitisfoundation.org/personal-stories/robert",
+      "tags": ["ibd", "advocacy", "system-navigation"]
+    },
+    {
+      "id": "ccf-shauntae",
+      "who": "Shauntae",
+      "condition": "Family history of Crohn's",
+      "blurb": "Watching her family live with Crohn's disease moved Shauntae to advocate for IBD awareness in the African American community. Her story is about being the person who didn't have it but still carried it.",
+      "source": "Crohn's & Colitis Foundation",
+      "url": "https://www.crohnscolitisfoundation.org/personal-stories/shauntae",
+      "tags": ["ibd", "family", "community"]
+    },
+    {
+      "id": "ccu-alexandra",
+      "who": "Alexandra",
+      "condition": "Ulcerative colitis",
+      "blurb": "Before diagnosis, Alexandra cut back her social life to avoid embarrassment over urgent bathroom trips. Opening up to her family and getting a diagnosis lifted a weight she hadn't realised she was carrying.",
+      "source": "Crohn's & Colitis UK",
+      "url": "https://www.crohnsandcolitis.org.uk/news-stories/blog-posts/alexandras-story",
+      "tags": ["ibd", "diagnosis-journey", "isolation"]
+    },
+    {
+      "id": "ccu-lauren",
+      "who": "Lauren",
+      "condition": "Crohn's disease",
+      "blurb": "Diagnosed in 2018, Lauren describes how her whole world has had to adapt around the condition. A measured account of how a chronic illness rearranges the daily ordinary.",
+      "source": "Crohn's & Colitis UK",
+      "url": "https://www.crohnsandcolitis.org.uk/news-stories/blog-posts/lauren-life-interrupted",
+      "tags": ["ibd", "adaptation", "daily-life"]
+    },
+    {
+      "id": "ccu-40-years",
+      "who": "An anonymous contributor",
+      "condition": "Ulcerative colitis (40 years)",
+      "blurb": "Four decades of living with colitis. A long-arc story about how treatment options, public attitudes, and personal coping strategies all change over a lifetime with the condition.",
+      "source": "Crohn's & Colitis UK",
+      "url": "https://www.crohnsandcolitis.org.uk/news-stories/blog-posts/colitis-for-40-years-blog",
+      "tags": ["ibd", "long-term", "perspective"]
+    }
+  ]
+}

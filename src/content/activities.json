@@ -1,0 +1,45 @@
+{
+  "__note": "Activity metadata. Each `id` matches a route in app/activity/[id].tsx. `buildable=false` entries render the Placeholder component until they ship.",
+  "activities": [
+    {
+      "id": "self-trial",
+      "title": "Self-trial",
+      "blurb": "Pick one suspected trigger. Cut it for 14, 21, or 28 days. See your own data.",
+      "duration": "14–28 days",
+      "category": "experiment",
+      "buildable": true
+    },
+    {
+      "id": "bristol-quiz",
+      "title": "Bristol scale literacy",
+      "blurb": "Five cards, identify the type. Learn the scale your doctor uses without medicalising it.",
+      "duration": "~2 min",
+      "category": "learn",
+      "buildable": true
+    },
+    {
+      "id": "gi-visit-prep",
+      "title": "Prep for a GI visit",
+      "blurb": "Interactive checklist of what to bring + a mock Q&A so you know what you'll want to say.",
+      "duration": "~5 min",
+      "category": "navigate",
+      "buildable": false
+    },
+    {
+      "id": "fodmap-basics",
+      "title": "FODMAP basics",
+      "blurb": "What the framework is, what the evidence says — and a quick sort game to learn the categories.",
+      "duration": "~5 min",
+      "category": "learn",
+      "buildable": false
+    },
+    {
+      "id": "stress-gut",
+      "title": "Stress & the gut",
+      "blurb": "A 7-day mini-protocol pairing sleep quality and daytime stress alongside your existing logs.",
+      "duration": "7 days",
+      "category": "experiment",
+      "buildable": false
+    }
+  ]
+}
